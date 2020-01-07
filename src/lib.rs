@@ -1,10 +1,12 @@
 extern crate pyo3;
 
+use std::str::FromStr;
 use pyo3::prelude::*;
 use pyo3::{wrap_pyfunction, import_exception};
-use pyo3::types::PyDict;
-use toml::Value;
-use toml::Value::{String, Integer, Float, Boolean, Datetime, Array, Table};
+use pyo3::types::{PyAny, PyDict, PyList, PyTuple, PyFloat, PyDateTime};
+use toml::{Value, to_string as to_toml_string};
+use toml::Value::{String as TomlString, Integer, Float, Boolean, Datetime, Array, Table};
+use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 
 import_exception!(utils, TomlError);
 
@@ -25,7 +27,7 @@ fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<P
             }
             Ok(list.to_object(py))
         },
-        String(v) => Ok(v.to_object(py)),
+        TomlString(v) => Ok(v.to_object(py)),
         Integer(v) => Ok(v.to_object(py)),
         Float(v) => Ok(v.to_object(py)),
         Boolean(v) => Ok(v.to_object(py)),
@@ -34,15 +36,156 @@ fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<P
 }
 
 #[pyfunction]
-fn parse(py: Python, toml: std::string::String, parse_datetime: PyObject) -> PyResult<PyObject> {
+fn deserialize(py: Python, toml: String, parse_datetime: PyObject) -> PyResult<PyObject> {
     match toml.parse::<Value>() {
         Ok(v) => convert_value(&v, py, &parse_datetime),
         Err(e) => Err(TomlError::py_err(e.to_string()))
     }
 }
 
+// taken from https://github.com/mre/hyperjson/blob/10d31608584ef4499d6b6b10b6dc9455b358fe3d/src/lib.rs#L287-L402
+struct SerializePyObject<'p, 'a> {
+    py: Python<'p>,
+    obj: &'a PyAny,
+}
+
+impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        macro_rules! cast {
+            ($f:expr) => {
+                if let Ok(val) = PyTryFrom::try_from(self.obj) {
+                    return $f(val);
+                }
+            };
+        }
+
+        macro_rules! extract {
+            ($t:ty) => {
+                if let Ok(val) = <$t as FromPyObject>::extract(self.obj) {
+                    return val.serialize(serializer);
+                }
+            };
+        }
+
+        macro_rules! isa {
+            ($v:ident, $t:ty) => {
+                self.py.is_instance::<$t, _>($v).map_err(debug_py_err)?
+            };
+        }
+
+        macro_rules! add_to_map {
+            ($map:ident, $key:ident, $value:ident) => {
+                if $key.is_none() {
+                    $map.serialize_key("null")?;
+                } else if let Ok(key) = $key.extract::<bool>() {
+                    $map.serialize_key(if key { "true" } else { "false" })?;
+                } else if let Ok(key) = $key.str() {
+                    let key = key.to_string().map_err(debug_py_err)?;
+                    $map.serialize_key(&key)?;
+                } else {
+                    return Err(ser::Error::custom(format_args!(
+                        "Dictionary key is not a string: {:?}", $key
+                    )));
+                }
+                $map.serialize_value(&SerializePyObject {py: self.py, obj: $value})?;
+            };
+        }
+
+        fn debug_py_err<E: ser::Error>(err: PyErr) -> E {
+            E::custom(format_args!("{:?}", err))
+        }
+
+        cast!(|x: &PyDict| {
+            let mut map = serializer.serialize_map(Some(x.len()))?;
+
+            // https://github.com/alexcrichton/toml-rs/issues/142#issuecomment-278970591
+            // taken from alexcrichton/toml-rs/blob/ec4e821f3bb081391801e4c00aa90bf66a53562c/src/value.rs#L364-L387
+            for (k, v) in x {
+                if !isa!(v, PyList) && !isa!(v, PyTuple) && !isa!(v, PyDict) {
+                    add_to_map!(map, k, v);
+                }
+            }
+            for (k, v) in x {
+                if isa!(v, PyList) || isa!(v, PyTuple) {
+                    add_to_map!(map, k, v);
+                }
+            }
+            for (k, v) in x {
+                if isa!(v, PyDict) {
+                    add_to_map!(map, k, v);
+                }
+            }
+            map.end()
+        });
+
+        macro_rules! to_seq {
+            ($type:ty) => {
+                cast!(|x: $type| {
+                    let mut seq = serializer.serialize_seq(Some(x.len()))?;
+                    for element in x {
+                        seq.serialize_element(&SerializePyObject {py: self.py, obj: element})?
+                    }
+                    return seq.end()
+                });
+            };
+        }
+
+        to_seq!(&PyList);
+        to_seq!(&PyTuple);
+
+        cast!(|x: &PyDateTime| {
+            let raw_str: &str = x.str().map_err(debug_py_err)?.extract().map_err(debug_py_err)?;
+            match toml::value::Datetime::from_str(raw_str) {
+                Ok(dt) => dt.serialize(serializer),
+                Err(e) => Err(ser::Error::custom(format_args!(
+                    "unable to convert datetime string to toml datetime object {:?}", e
+                )))
+            }
+        });
+
+        extract!(String);
+        extract!(bool);
+
+        cast!(|x: &PyFloat| x.value().serialize(serializer));
+        extract!(u64);
+        extract!(i64);
+
+        if self.obj.is_none() {
+            return serializer.serialize_str("null");
+        }
+
+        let name = self.obj.get_type().name();
+        match self.obj.repr() {
+            Ok(repr) => Err(ser::Error::custom(format_args!(
+                "{} is not serializable to TOML: {}", name, repr,
+            ))),
+            Err(_) => Err(ser::Error::custom(format_args!(
+                "{} is not serializable to TOML", name,
+            ))),
+        }
+    }
+
+}
+
+#[pyfunction]
+fn serialize(py: Python, obj: PyObject) -> PyResult<String> {
+    let s = SerializePyObject {
+        py,
+        obj: obj.extract(py)?
+    };
+    match to_toml_string(&s) {
+        Ok(s) => Ok(s),
+        Err(e) => Err(TomlError::py_err(e.to_string()))
+
+    }
+}
+
 #[pymodule]
 fn rtoml(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_wrapped(wrap_pyfunction!(parse))?;
+    m.add_wrapped(wrap_pyfunction!(deserialize))?;
+    m.add_wrapped(wrap_pyfunction!(serialize))?;
     Ok(())
 }

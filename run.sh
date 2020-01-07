@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-cargo build -q
+cargo build
 
 cp target/debug/librtoml.so rtoml.so
 
