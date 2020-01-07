@@ -1,66 +1,48 @@
+extern crate pyo3;
+
 use pyo3::prelude::*;
-use pyo3::wrap_pyfunction;
-use pyo3::types::{PyDict, PyList, PyTuple, PyDateTime};
+use pyo3::{wrap_pyfunction, import_exception};
+use pyo3::types::PyDict;
 use toml::Value;
 use toml::Value::{String, Integer, Float, Boolean, Datetime, Array, Table};
-use chrono::{DateTime};
 
-fn convert_value(py: Python, t: &Value) -> PyObject {
-    match *t {
-        Table(ref table) => {
+import_exception!(utils, TomlError);
+
+fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<PyObject> {
+    match t {
+        Table(table) => {
             let d = PyDict::new(py);
             for (key, value) in table.iter() {
-                d.set_item(key.to_string(), convert_value(py,value)).unwrap();
+                d.set_item(key.to_string(), convert_value(value, py, parse_datetime)?)?;
             }
-            d.to_object(py)
+            Ok(d.to_object(py))
         },
 
-        Array(ref array) => {
-            let l = PyList::empty(py);
-            for value in array.iter() {
-                l.append(convert_value(py, value)).unwrap();
+        Array(array) => {
+            let mut list: Vec<PyObject> = Vec::with_capacity(array.len());
+            for (i, value) in array.iter().enumerate() {
+                list[i] = convert_value(value, py, parse_datetime)?;
             }
-            l.to_object(py)
+            Ok(list.to_object(py))
         },
-        String(ref v) => v.to_object(py),
-        Integer(ref v) => v.to_object(py),
-        Float(ref v) => v.to_object(py),
-        Boolean(ref v) => v.to_object(py),
-        Datetime(ref v) => {
-
-            let parse_dt = py.import("parse_dt").unwrap();
-            let parse_datetime = parse_dt.get("parse_datetime").unwrap().to_object(py);
-            let args = PyTuple::new(py, &[v.to_string().to_object(py)]);
-            println!("{:?}", parse_datetime.call1(py, args));
-
-            // really ugly, but only option since toml datetime keeps .date and .time private
-//            let datetime = py.import("datetime").unwrap();
-//            let timezone = datetime.get("timezone").unwrap();
-//            datetime.timezone(
-
-            let dt = DateTime::parse_from_rfc3339(&v.to_string()).unwrap();
-//            println!("{:?}", dt);
-////            if let Some(date) = dt.date {
-////                if let Some(time) = dt.time {
-////                    println!("{} {}", date, time)
-////                }
-////            }
-            PyDateTime::from_timestamp(py, dt.timestamp() as f64, None).unwrap().to_object(py)
-        }
+        String(v) => Ok(v.to_object(py)),
+        Integer(v) => Ok(v.to_object(py)),
+        Float(v) => Ok(v.to_object(py)),
+        Boolean(v) => Ok(v.to_object(py)),
+        Datetime(v) => parse_datetime.call1(py, (v.to_string(),)),
     }
 }
 
-
 #[pyfunction]
-fn load(py: Python, toml: std::string::String) -> PyResult<PyObject> {
-    let value = toml.parse::<Value>().unwrap();
-    let obj = convert_value(py,&value);
-    Ok(obj)
+fn parse(py: Python, toml: std::string::String, parse_datetime: PyObject) -> PyResult<PyObject> {
+    match toml.parse::<Value>() {
+        Ok(v) => convert_value(&v, py, &parse_datetime),
+        Err(e) => Err(TomlError::py_err(e.to_string()))
+    }
 }
 
 #[pymodule]
 fn rtoml(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_wrapped(wrap_pyfunction!(load))?;
-
+    m.add_wrapped(wrap_pyfunction!(parse))?;
     Ok(())
 }

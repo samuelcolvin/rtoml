@@ -6,4 +6,4 @@ cargo build -q
 cp target/debug/librtoml.so rtoml.so
 
 echo "========================================================"
-python3 run.py
+python3.7 run.py

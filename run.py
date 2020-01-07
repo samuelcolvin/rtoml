@@ -1,6 +1,13 @@
+from utils import parse_datetime
 import rtoml
 
-debug(rtoml.load("""
+success = rtoml.parse("""\
 foo = 'bar'
-bar = 1979-05-27T07:32:00Z
-"""))
+bar.x = 1979-05-27T07:32:00Z
+bar.y = ""
+""", parse_datetime)
+debug(success)
+
+rtoml.parse('''
+
+''', parse_datetime)

@@ -3,3 +3,4 @@
 /rtoml.so
 __pycache__/
 /.idea/
+/env/
