@@ -146,12 +146,13 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
         to_seq!(&PyTuple);
 
         cast!(|x: &PyDateTime| {
-            let raw_str: &str = x
+            let dt_str: &str = x
                 .str()
                 .map_err(debug_py_err)?
                 .extract()
                 .map_err(debug_py_err)?;
-            match toml::value::Datetime::from_str(raw_str) {
+            let iso_str = dt_str.replacen("+00:00", "Z", 1);
+            match toml::value::Datetime::from_str(&iso_str) {
                 Ok(dt) => dt.serialize(serializer),
                 Err(e) => Err(ser::Error::custom(format_args!(
                     "unable to convert datetime string to toml datetime object {:?}",

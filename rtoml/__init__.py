@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timezone
 from io import TextIOBase
 from pathlib import Path
 from typing import Any, TextIO, Union
@@ -52,12 +52,19 @@ def dump(obj: Any, file: Union[Path, TextIO]) -> int:
         return file.write(s)
 
 
-def parse_datetime(v: str) -> datetime:
-    tz = None
-    if v.endswith(('z', 'Z')):
-        tz = timezone.utc
-        v = v[:-1]
-    dt = datetime.fromisoformat(v)
-    if tz:
-        dt = dt.replace(tzinfo=tz)
-    return dt
+def parse_datetime(v: str) -> Union[date, time]:
+    try:
+        return date.fromisoformat(v)
+    except ValueError:
+        tz = None
+        if v.endswith(('z', 'Z')):
+            tz = timezone.utc
+            v = v[:-1]
+        try:
+            dt = datetime.fromisoformat(v)
+        except ValueError:
+            return time.fromisoformat(v)
+        else:
+            if tz:
+                dt = dt.replace(tzinfo=tz)
+            return dt
