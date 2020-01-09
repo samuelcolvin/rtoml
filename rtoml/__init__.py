@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, TextIO, Union
 
 from . import _rtoml
+from .version import VERSION
 
 __all__ = 'TomlError', 'load', 'loads'
 

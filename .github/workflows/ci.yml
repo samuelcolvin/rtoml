@@ -51,6 +51,12 @@ jobs:
     needs: test
 #    if: success() && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+        - cp37-manylinux_x86_64
+        - cp38-manylinux_x86_64
+
     steps:
     - uses: actions/checkout@v2
 
@@ -66,7 +72,7 @@ jobs:
         ls -lah
         ls -lah dist/
       env:
-        CIBW_BUILD: 'cp37-manylinux1_x86_64 cp37-manylinux1_i686 cp38-manylinux1_x86_64 cp38-manylinux1_i686'
-        CIBW_BEFORE_BUILD: 'source {project}/.github/workflows/install-rust.sh'
+        CIBW_BUILD: ${{ matrix.target }}
+        CIBW_BEFORE_BUILD: '{project}/.github/workflows/install-rust.sh'
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
