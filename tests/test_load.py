@@ -9,6 +9,7 @@ import rtoml
     'input_toml,output_obj',
     [
         ('foo = "bar"', {'foo': 'bar'}),
+        ('ports = [ 8001, 8001, 8002 ]', {'ports': [8001, 8001, 8002]}),
         ('x = 1979-05-27T07:32:00Z', {'x': datetime(1979, 5, 27, 7, 32, tzinfo=timezone.utc)}),
     ],
 )

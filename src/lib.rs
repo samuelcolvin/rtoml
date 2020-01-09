@@ -24,8 +24,8 @@ fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<P
 
         Array(array) => {
             let mut list: Vec<PyObject> = Vec::with_capacity(array.len());
-            for (i, value) in array.iter().enumerate() {
-                list[i] = convert_value(value, py, parse_datetime)?;
+            for value in array {
+                list.push(convert_value(value, py, parse_datetime)?)
             }
             Ok(list.to_object(py))
         }
