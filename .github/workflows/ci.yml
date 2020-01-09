@@ -68,3 +68,4 @@ jobs:
       env:
         CIBW_BUILD: 'cp37-manylinux1_x86_64 cp37-manylinux1_i686 cp38-manylinux1_x86_64 cp38-manylinux1_i686'
         CIBW_BEFORE_BUILD: 'source {project}/install-rust.sh'
+        CIBW_TEST_COMMAND: 'python -c "import rtoml"'
