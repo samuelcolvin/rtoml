@@ -28,12 +28,7 @@ import rtoml
         ('x = 1979-05-27T00:32:00.999999', {'x': datetime(1979, 5, 27, 0, 32, 0, 999999)}),
         ('x = 1987-01-28', {'x': date(1987, 1, 28)}),
         ('x = 12:34:56', {'x': time(12, 34, 56)}),
-        (
-            '''
-foo.bar = "thing"
-''',
-            {'foo': {'bar': 'thing'}},
-        ),
+        ('foo.bar = "thing"', {'foo': {'bar': 'thing'}}),
         (
             '''
 foo.bar = """
@@ -59,7 +54,7 @@ more"""
             {'foo': {'bar': 'thing\n\nmore'}},
         ),
         (
-            '''
+            """
 # This is a TOML document. (from https://github.com/toml-lang/toml)
 
 title = "TOML Example"
@@ -93,7 +88,7 @@ hosts = [
   "alpha",
   "omega"
 ]
-''',
+""",
             {
                 'clients': {'data': [['gamma', 'delta'], [1, 2]], 'hosts': ['alpha', 'omega']},
                 'database': {
@@ -139,7 +134,7 @@ def test_invalid_type():
 
 
 def test_invalid_toml():
-    with pytest.raises(rtoml.TomlError, match='invalid number at line 1 column 5'):
+    with pytest.raises(rtoml.TomlParsingError, match='invalid number at line 1 column 5'):
         rtoml.load('x = y')
 
 

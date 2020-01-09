@@ -10,7 +10,8 @@ use toml::Value::{Array, Boolean, Datetime, Float, Integer, String as TomlString
 use toml::{to_string as to_toml_string, Value};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-create_exception!(_rtoml, TomlError, ValueError);
+create_exception!(_rtoml, TomlParsingError, ValueError);
+create_exception!(_rtoml, TomlSerializationError, ValueError);
 
 fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<PyObject> {
     match t {
@@ -41,7 +42,7 @@ fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<P
 fn deserialize(py: Python, toml: String, parse_datetime: PyObject) -> PyResult<PyObject> {
     match toml.parse::<Value>() {
         Ok(v) => convert_value(&v, py, &parse_datetime),
-        Err(e) => Err(TomlError::py_err(e.to_string())),
+        Err(e) => Err(TomlParsingError::py_err(e.to_string())),
     }
 }
 
@@ -146,11 +147,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
         to_seq!(&PyTuple);
 
         cast!(|x: &PyDateTime| {
-            let dt_str: &str = x
-                .str()
-                .map_err(debug_py_err)?
-                .extract()
-                .map_err(debug_py_err)?;
+            let dt_str: &str = x.str().map_err(debug_py_err)?.extract().map_err(debug_py_err)?;
             let iso_str = dt_str.replacen("+00:00", "Z", 1);
             match toml::value::Datetime::from_str(&iso_str) {
                 Ok(dt) => dt.serialize(serializer),
@@ -178,10 +175,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 "{} is not serializable to TOML: {}",
                 name, repr,
             ))),
-            Err(_) => Err(ser::Error::custom(format_args!(
-                "{} is not serializable to TOML",
-                name,
-            ))),
+            Err(_) => Err(ser::Error::custom(format_args!("{} is not serializable to TOML", name))),
         }
     }
 }
@@ -194,13 +188,14 @@ fn serialize(py: Python, obj: PyObject) -> PyResult<String> {
     };
     match to_toml_string(&s) {
         Ok(s) => Ok(s),
-        Err(e) => Err(TomlError::py_err(e.to_string())),
+        Err(e) => Err(TomlSerializationError::py_err(e.to_string())),
     }
 }
 
 #[pymodule]
 fn _rtoml(py: Python, m: &PyModule) -> PyResult<()> {
-    m.add("TomlError", py.get_type::<TomlError>())?;
+    m.add("TomlParsingError", py.get_type::<TomlParsingError>())?;
+    m.add("TomlSerializationError", py.get_type::<TomlSerializationError>())?;
     m.add("VERSION", VERSION)?;
     m.add_wrapped(wrap_pyfunction!(deserialize))?;
     m.add_wrapped(wrap_pyfunction!(serialize))?;

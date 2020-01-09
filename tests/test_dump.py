@@ -33,3 +33,8 @@ def test_dump_file(tmp_path):
     with p.open('w') as f:
         assert rtoml.dump({'foo': 'bar'}, f) == 12
     assert p.read_text() == 'foo = "bar"\n'
+
+
+def test_varied_list():
+    with pytest.raises(rtoml.TomlSerializationError):
+        rtoml.dumps([1, '2'])

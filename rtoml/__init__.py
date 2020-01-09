@@ -5,11 +5,12 @@ from typing import Any, TextIO, Union
 
 from . import _rtoml
 
-__all__ = 'VERSION', 'TomlError', 'load', 'loads', 'dumps', 'dump'
+__all__ = 'VERSION', 'TomlParsingError', 'TomlSerializationError', 'load', 'loads', 'dumps', 'dump'
 
 # VERSION is set in Cargo.toml
 VERSION = _rtoml.VERSION
-TomlError = _rtoml.TomlError
+TomlParsingError = _rtoml.TomlParsingError
+TomlSerializationError = _rtoml.TomlSerializationError
 
 
 def load(toml: Union[str, Path, TextIO]) -> Any:
