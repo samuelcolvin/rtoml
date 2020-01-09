@@ -44,7 +44,7 @@ jobs:
 
     - uses: codecov/codecov-action@v1.0.5
       with:
-        token: ${{secrets.CODECOV_TOKEN}}
+        token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
 
   build:
@@ -54,8 +54,9 @@ jobs:
     strategy:
       matrix:
         target:
-        - cp37-manylinux_x86_64
-        - cp38-manylinux_x86_64
+        - 'cp37-*'
+        - 'cp38-*'
+        - 'sdist'
 
     steps:
     - uses: actions/checkout@v2
@@ -68,17 +69,22 @@ jobs:
     - name: install python dependencies
       run: pip install -U pip setuptools setuptools-rust cibuildwheel wheel twine
 
+    - name: build sdist
+      if: matrix.target == 'sdist'
+      run: python setup.py sdist
+
     - name: build binaries
-      run: cibuildwheel --platform linux --output-dir dist
+      if: matrix.target != 'sdist'
+      run: cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: ${{ matrix.target }}
+        CIBW_PLATFORM: linux
         CIBW_BEFORE_BUILD: '{project}/.github/workflows/install-rust.sh'
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
 
     - name: upload to pypi
       run: |
-        python setup.py sdist
         ls -lah dist/
         twine check dist/*
         twine upload dist/*
