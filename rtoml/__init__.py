@@ -1,20 +1,21 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timezone
 from io import TextIOBase
 from pathlib import Path
 from typing import Any, TextIO, Union
 
 from . import _rtoml
 
-__all__ = 'VERSION', 'TomlError', 'load', 'loads', 'dumps', 'dump'
+__all__ = 'VERSION', 'TomlParsingError', 'TomlSerializationError', 'load', 'loads', 'dumps', 'dump'
 
 # VERSION is set in Cargo.toml
 VERSION = _rtoml.VERSION
-TomlError = _rtoml.TomlError
+TomlParsingError = _rtoml.TomlParsingError
+TomlSerializationError = _rtoml.TomlSerializationError
 
 
 def load(toml: Union[str, Path, TextIO]) -> Any:
     """
-    Parse TOML via a string or file and return a python object. The `toml` argument by be a `str`,
+    Parse TOML via a string or file and return a python object. The `toml` argument may be a `str`,
     `Path` or file object from `open()`.
     """
     if isinstance(toml, Path):
@@ -27,7 +28,7 @@ def load(toml: Union[str, Path, TextIO]) -> Any:
 
 def loads(toml: str) -> Any:
     """
-    Parse a TOML string and return a python object.
+    Parse a TOML string and return a python object. (provided to match the interface of `json` and similar libraries)
     """
     if not isinstance(toml, str):
         raise TypeError(f'invalid toml input, must be str not {type(toml)}')
@@ -43,7 +44,7 @@ def dumps(obj: Any) -> str:
 
 def dump(obj: Any, file: Union[Path, TextIO]) -> int:
     """
-    Serialize a python object to TOML and write it to a file. `file` maybe a `Path` or file object from `open()`.
+    Serialize a python object to TOML and write it to a file. `file` may be a `Path` or file object from `open()`.
     """
     s = dumps(obj)
     if isinstance(file, Path):
@@ -52,12 +53,19 @@ def dump(obj: Any, file: Union[Path, TextIO]) -> int:
         return file.write(s)
 
 
-def parse_datetime(v: str) -> datetime:
-    tz = None
-    if v.endswith(('z', 'Z')):
-        tz = timezone.utc
-        v = v[:-1]
-    dt = datetime.fromisoformat(v)
-    if tz:
-        dt = dt.replace(tzinfo=tz)
-    return dt
+def parse_datetime(v: str) -> Union[date, time]:
+    try:
+        return date.fromisoformat(v)
+    except ValueError:
+        tz = None
+        if v.endswith(('z', 'Z')):
+            tz = timezone.utc
+            v = v[:-1]
+        try:
+            dt = datetime.fromisoformat(v)
+        except ValueError:
+            return time.fromisoformat(v)
+        else:
+            if tz:
+                dt = dt.replace(tzinfo=tz)
+            return dt

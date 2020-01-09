@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -9,8 +9,13 @@ import rtoml
     'input_obj,output_toml',
     [
         ({'foo': 'bar'}, 'foo = "bar"\n'),
+        ([1, 2, 3], '[1, 2, 3]'),
+        (datetime(1979, 5, 27, 7, 32), '1979-05-27T07:32:00'),
+        (datetime(1979, 5, 27, 7, 32, tzinfo=timezone.utc), '1979-05-27T07:32:00Z'),
         ({'x': datetime(1979, 5, 27, 7, 32)}, 'x = 1979-05-27T07:32:00\n'),
-        # ({'x': datetime(1979, 5, 27, 7, 32, tzinfo=timezone.utc)}, 'x = 1979-05-27T07:32:00Z'),
+        # order changed to avoid https://github.com/alexcrichton/toml-rs/issues/142
+        ({'x': {'a': 1}, 'y': 4}, 'y = 4\n\n[x]\na = 1\n'),
+        ((1, 2, 3), '[1, 2, 3]'),
     ],
 )
 def test_dumps(input_obj, output_toml):
@@ -28,3 +33,8 @@ def test_dump_file(tmp_path):
     with p.open('w') as f:
         assert rtoml.dump({'foo': 'bar'}, f) == 12
     assert p.read_text() == 'foo = "bar"\n'
+
+
+def test_varied_list():
+    with pytest.raises(rtoml.TomlSerializationError):
+        rtoml.dumps([1, '2'])

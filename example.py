@@ -1,49 +1,3 @@
-# rtoml
-
-A better TOML library for python implemented in rust.
-
-## Install
-
-Requires linux and `python>=3.7`.
-
-```bash
-pip install rtoml
-```
-
-## Usage
-
-#### load
-```python
-def load(toml: Union[str, Path, TextIO]) -> Any: ...
-```
-
-Parse TOML via a string or file and return a python object. The `toml` argument may be a `str`,
-`Path` or file object from `open()`.
-
-#### loads
-```python
-def loads(toml: str) -> Any: ...
-```
-
-Parse a TOML string and return a python object. (provided to match the interface of `json` and similar libraries)
-
-#### dumps
-```python
-def dumps(obj: Any) -> str: ...
-```
-
-Serialize a python object to TOML.
-
-#### dump
-```python
-def dump(obj: Any, file: Union[Path, TextIO]) -> int: ...
-```
-
-Serialize a python object to TOML and write it to a file. `file` may be a `Path` or file object from `open()`.
-
-### Example
-
-```py
 from datetime import datetime, timezone, timedelta
 import rtoml
 
@@ -92,4 +46,3 @@ enabled = true
 server = "192.168.1.1"
 ports = [8001, 8001, 8002]
 """
-```

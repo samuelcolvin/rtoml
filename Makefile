@@ -35,7 +35,7 @@ test:
 	pytest --cov=rtoml
 
 .PHONY: testcov
-testcov: test
+testcov: build test
 	@echo "building coverage html"
 	@coverage html
 
@@ -48,6 +48,9 @@ clean:
 	rm -f `find . -type f -name '*.py[co]' `
 	rm -f `find . -type f -name '*~' `
 	rm -f `find . -type f -name '.*~' `
+	rm -rf dist
+	rm -rf build
+	rm -rf target
 	rm -rf .cache
 	rm -rf .pytest_cache
 	rm -rf .mypy_cache

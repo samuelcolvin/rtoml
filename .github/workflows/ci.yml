@@ -42,6 +42,16 @@ jobs:
         coverage xml
         ls -alh
 
+    - name: install go
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13.x
+
+    - name: run toml-test
+      run: |
+        go get github.com/BurntSushi/toml-test
+        ~/go/bin/toml-test ./tests/toml_test.py
+
     - uses: codecov/codecov-action@v1.0.5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
