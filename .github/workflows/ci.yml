@@ -67,15 +67,16 @@ jobs:
 
     - run: pip install -U pip setuptools setuptools-rust cibuildwheel wheel twine
 
-    - name: build pypi binary
-    - run: cibuildwheel --platform linux --output-dir dist
+    - name: build binaries
+      run: cibuildwheel --platform linux --output-dir dist
       env:
         CIBW_BUILD: ${{ matrix.target }}
         CIBW_BEFORE_BUILD: '{project}/.github/workflows/install-rust.sh'
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
 
-    - run: |
+    - name: upload to pypi
+      run: |
         ls -lah dist/
         twine check dist/*
         twine upload dist/*
