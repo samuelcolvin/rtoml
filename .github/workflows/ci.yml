@@ -46,3 +46,25 @@ jobs:
       with:
         token: ${{secrets.CODECOV_TOKEN}}
         file: ./coverage.xml
+
+  build:
+    needs: test
+#    if: success() && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - run: pip install -U pip setuptools setuptools-rust cibuildwheel wheel
+
+    - run: |
+        cibuildwheel --output-dir dist
+        ls -lah
+        ls -lah dist/
+      env:
+        CIBW_BUILD: 'cp37-manylinux1_x86_64 cp37-manylinux1_i686 cp38-manylinux1_x86_64 cp38-manylinux1_i686'
+        CIBW_BEFORE_BUILD: 'source {project}/install-rust.sh'
