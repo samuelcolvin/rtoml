@@ -5,7 +5,7 @@ from typing import Any, TextIO, Union
 
 from . import _rtoml
 
-__all__ = 'TomlError', 'load', 'loads'
+__all__ = 'TomlError', 'load', 'loads', 'dumps'
 
 TomlError = _rtoml.TomlError
 
@@ -23,6 +23,18 @@ def loads(toml: str) -> Any:
     if not isinstance(toml, str):
         raise TypeError(f'invalid toml input, must be str not {type(toml)}')
     return _rtoml.deserialize(toml, parse_datetime)
+
+
+def dumps(obj: Any) -> str:
+    return _rtoml.serialize(obj)
+
+
+def dump(obj: Any, file: Union[Path, TextIO]) -> int:
+    s = dumps(obj)
+    if isinstance(file, Path):
+        return file.write_text(s)
+    else:
+        return file.write(s)
 
 
 def parse_datetime(v: str) -> datetime:
