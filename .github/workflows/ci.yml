@@ -23,6 +23,9 @@ jobs:
         toolchain: nightly
         components: rustfmt, clippy
 
+    - name: install python dependencies
+      run: make install
+
     - name: build
       run: make build
 

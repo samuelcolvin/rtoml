@@ -2,7 +2,7 @@
 isort = isort -rc rtoml tests
 black = black -S -l 120 --target-version py36 rtoml tests
 
-install-develop:
+install:
 	pip install -U pip wheel setuptools setuptools-rust
 	pip install -U -r tests/requirements.txt
 
