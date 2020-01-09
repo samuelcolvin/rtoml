@@ -17,7 +17,7 @@ pip install rtoml
 def load(toml: Union[str, Path, TextIO]) -> Any: ...
 ```
 
-Parse TOML via a string or file and return a python object. The `toml` argument by be a `str`,
+Parse TOML via a string or file and return a python object. The `toml` argument may be a `str`,
 `Path` or file object from `open()`.
 
 #### loads
@@ -25,7 +25,7 @@ Parse TOML via a string or file and return a python object. The `toml` argument 
 def loads(toml: str) -> Any: ...
 ```
 
-Parse a TOML string and return a python object.
+Parse a TOML string and return a python object. (provided to match the interface of `json` and similar libraries)
 
 #### dumps
 ```python
@@ -39,7 +39,7 @@ Serialize a python object to TOML.
 def dump(obj: Any, file: Union[Path, TextIO]) -> int: ...
 ```
 
-Serialize a python object to TOML and write it to a file. `file` maybe a `Path` or file object from `open()`.
+Serialize a python object to TOML and write it to a file. `file` may be a `Path` or file object from `open()`.
 
 ### Example
 

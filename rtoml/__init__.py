@@ -15,7 +15,7 @@ TomlSerializationError = _rtoml.TomlSerializationError
 
 def load(toml: Union[str, Path, TextIO]) -> Any:
     """
-    Parse TOML via a string or file and return a python object. The `toml` argument by be a `str`,
+    Parse TOML via a string or file and return a python object. The `toml` argument may be a `str`,
     `Path` or file object from `open()`.
     """
     if isinstance(toml, Path):
@@ -28,7 +28,7 @@ def load(toml: Union[str, Path, TextIO]) -> Any:
 
 def loads(toml: str) -> Any:
     """
-    Parse a TOML string and return a python object.
+    Parse a TOML string and return a python object. (provided to match the interface of `json` and similar libraries)
     """
     if not isinstance(toml, str):
         raise TypeError(f'invalid toml input, must be str not {type(toml)}')
@@ -44,7 +44,7 @@ def dumps(obj: Any) -> str:
 
 def dump(obj: Any, file: Union[Path, TextIO]) -> int:
     """
-    Serialize a python object to TOML and write it to a file. `file` maybe a `Path` or file object from `open()`.
+    Serialize a python object to TOML and write it to a file. `file` may be a `Path` or file object from `open()`.
     """
     s = dumps(obj)
     if isinstance(file, Path):
