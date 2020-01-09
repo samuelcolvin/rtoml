@@ -2,14 +2,12 @@
 isort = isort -rc rtoml tests
 black = black -S -l 120 --target-version py36 rtoml tests
 
-.PHONY: install-develop
 install-develop:
 	pip install -U pip wheel setuptools setuptools-rust
 	pip install -U -r tests/requirements.txt
-	python ./setup.py develop
 
-.PHONY: build-dev
-build-dev:
+.PHONY: build
+build:
 	python ./setup.py develop
 
 .PHONY: format

@@ -1,20 +1,36 @@
+from datetime import datetime, timezone
 from io import TextIOBase
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, TextIO, Union
 
 from . import rust_rtoml
-from .utils import TomlError, parse_datetime
 
-__all__ = 'TomlError', 'load'
+__all__ = 'TomlError', 'load', 'loads'
+
+TomlError = rust_rtoml.TomlError
 
 
-def load(v: Union[str, bytes, Path, TextIOBase]) -> Any:
-    if isinstance(v, Path):
-        v = v.read_text()
-    elif isinstance(v, TextIOBase):
-        v = v.read()
+def load(toml: Union[str, Path, TextIO]) -> Any:
+    if isinstance(toml, Path):
+        toml = toml.read_text()
+    elif isinstance(toml, (TextIOBase, TextIO)):
+        toml = toml.read()
 
-    if isinstance(v, bytes):
-        v = v.decode()
+    return loads(toml)
 
-    return rust_rtoml.deserialize(v, parse_datetime)
+
+def loads(toml: str) -> Any:
+    if not isinstance(toml, str):
+        raise TypeError(f'invalid toml input, must be str not {type(toml)}')
+    return rust_rtoml.deserialize(toml, parse_datetime)
+
+
+def parse_datetime(v: str) -> datetime:
+    tz = None
+    if v.endswith(('z', 'Z')):
+        tz = timezone.utc
+        v = v[:-1]
+    dt = datetime.fromisoformat(v)
+    if tz:
+        dt = dt.replace(tzinfo=tz)
+    return dt

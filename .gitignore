@@ -12,3 +12,4 @@ __pycache__/
 /.idea/
 /.vscode/
 /rtoml/*.so
+.coverage
