@@ -206,7 +206,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rtoml"
-version = "0.1.0"
+version = "0.0.2"
 dependencies = [
  "pyo3 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",

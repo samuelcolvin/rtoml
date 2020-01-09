@@ -26,12 +26,6 @@ lint:
 	cargo clippy --version
 	cargo clippy -- -D warnings
 
-.PHONY: check-dist
-check-dist:
-	python setup.py check -ms
-	python setup.py sdist
-	twine check dist/*
-
 .PHONY: mypy
 mypy:
 	mypy rtoml

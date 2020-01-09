@@ -1,3 +1,3 @@
 # rtoml
 
-A better toml library for python implemented in rust.
+A better TOML library for python implemented in rust.
