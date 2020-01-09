@@ -10,5 +10,5 @@ serde = "1.0.104"
 pyo3 = {version = "0.8.5", features = ["extension-module"]}
 
 [lib]
-name = "rust_rtoml"
+name = "_rtoml"
 crate-type = ["cdylib"]

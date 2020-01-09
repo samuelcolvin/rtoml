@@ -3,11 +3,11 @@ from io import TextIOBase
 from pathlib import Path
 from typing import Any, TextIO, Union
 
-from . import rust_rtoml
+from . import _rtoml
 
 __all__ = 'TomlError', 'load', 'loads'
 
-TomlError = rust_rtoml.TomlError
+TomlError = _rtoml.TomlError
 
 
 def load(toml: Union[str, Path, TextIO]) -> Any:
@@ -22,7 +22,7 @@ def load(toml: Union[str, Path, TextIO]) -> Any:
 def loads(toml: str) -> Any:
     if not isinstance(toml, str):
         raise TypeError(f'invalid toml input, must be str not {type(toml)}')
-    return rust_rtoml.deserialize(toml, parse_datetime)
+    return _rtoml.deserialize(toml, parse_datetime)
 
 
 def parse_datetime(v: str) -> datetime:

@@ -9,7 +9,7 @@ use toml::{Value, to_string as to_toml_string};
 use toml::Value::{String as TomlString, Integer, Float, Boolean, Datetime, Array, Table};
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 
-create_exception!(rust_rtoml, TomlError, ValueError);
+create_exception!(_rtoml, TomlError, ValueError);
 
 fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<PyObject> {
     match t {
@@ -185,7 +185,7 @@ fn serialize(py: Python, obj: PyObject) -> PyResult<String> {
 }
 
 #[pymodule]
-fn rust_rtoml(py: Python, m: &PyModule) -> PyResult<()> {
+fn _rtoml(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("TomlError", py.get_type::<TomlError>())?;
     m.add_wrapped(wrap_pyfunction!(deserialize))?;
     m.add_wrapped(wrap_pyfunction!(serialize))?;
