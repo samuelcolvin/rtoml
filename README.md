@@ -1,5 +1,11 @@
 # rtoml
 
+[![Actions Status](https://github.com/samuelcolvin/rtoml/workflows/CI/badge.svg)](https://github.com/samuelcolvin/rtoml/actions)
+[![Coverage](https://codecov.io/gh/samuelcolvin/rtoml/branch/master/graph/badge.svg)](https://codecov.io/gh/samuelcolvin/rtoml)
+[![pypi](https://img.shields.io/pypi/v/rtoml.svg)](https://pypi.python.org/pypi/rtoml)
+[![license](https://img.shields.io/github/license/samuelcolvin/rtoml.svg)](https://github.com/samuelcolvin/rtoml/blob/master/LICENSE)
+
+
 A better TOML library for python implemented in rust.
 
 ## Install
