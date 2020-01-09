@@ -2,5 +2,13 @@
 **/*.rs.bk
 /rtoml.so
 __pycache__/
-/.idea/
+*.py[cod]
+*.egg-info/
 /env/
+.pytest_cache/
+.mypy_cache/
+/sandbox/
+/htmlcov/
+/.idea/
+/.vscode/
+/rtoml/*.so

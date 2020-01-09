@@ -4,14 +4,11 @@ version = "0.1.0"
 authors = ["Samuel Colvin <s@muelcolvin.com>"]
 edition = "2018"
 
-[lib]
-name = "rtoml"
-crate-type = ["cdylib"]
-
 [dependencies]
 toml = "0.5.5"
 serde = "1.0.104"
+pyo3 = {version = "0.8.5", features = ["extension-module"]}
 
-[dependencies.pyo3]
-version = "0.8.5"
-features = ["extension-module"]
+[lib]
+name = "rust_rtoml"
+crate-type = ["cdylib"]
