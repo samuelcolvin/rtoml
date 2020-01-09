@@ -1,0 +1,44 @@
+name: CI
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8']
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: set up python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        components: rustfmt, clippy
+
+    - name: build
+      run: make build
+
+    - name: lint
+      run: make lint
+
+    - name: mypy
+      run: make mypy
+
+    - name: test
+      run: |
+        make test
+        coverage xml
+        ls -alh
+
+    - uses: codecov/codecov-action@v1.0.5
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
+        file: ./coverage.xml

@@ -14,12 +14,17 @@ build:
 format:
 	$(isort)
 	$(black)
+	cargo fmt
 
 .PHONY: lint
 lint:
 	flake8 rtoml/ tests/
 	$(isort) --check-only
 	$(black) --check
+	cargo fmt --version
+	cargo fmt --all -- --check
+	cargo clippy --version
+	cargo clippy -- -D warnings
 
 .PHONY: check-dist
 check-dist:

@@ -1,13 +1,13 @@
 extern crate pyo3;
 
-use std::str::FromStr;
-use pyo3::prelude::*;
-use pyo3::{wrap_pyfunction, create_exception};
-use pyo3::types::{PyAny, PyDict, PyList, PyTuple, PyFloat, PyDateTime};
 use pyo3::exceptions::ValueError;
-use toml::{Value, to_string as to_toml_string};
-use toml::Value::{String as TomlString, Integer, Float, Boolean, Datetime, Array, Table};
+use pyo3::prelude::*;
+use pyo3::types::{PyAny, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
+use pyo3::{create_exception, wrap_pyfunction};
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
+use std::str::FromStr;
+use toml::Value::{Array, Boolean, Datetime, Float, Integer, String as TomlString, Table};
+use toml::{to_string as to_toml_string, Value};
 
 create_exception!(_rtoml, TomlError, ValueError);
 
@@ -19,7 +19,7 @@ fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<P
                 d.set_item(key.to_string(), convert_value(value, py, parse_datetime)?)?;
             }
             Ok(d.to_object(py))
-        },
+        }
 
         Array(array) => {
             let mut list: Vec<PyObject> = Vec::with_capacity(array.len());
@@ -27,7 +27,7 @@ fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<P
                 list[i] = convert_value(value, py, parse_datetime)?;
             }
             Ok(list.to_object(py))
-        },
+        }
         TomlString(v) => Ok(v.to_object(py)),
         Integer(v) => Ok(v.to_object(py)),
         Float(v) => Ok(v.to_object(py)),
@@ -40,7 +40,7 @@ fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<P
 fn deserialize(py: Python, toml: String, parse_datetime: PyObject) -> PyResult<PyObject> {
     match toml.parse::<Value>() {
         Ok(v) => convert_value(&v, py, &parse_datetime),
-        Err(e) => Err(TomlError::py_err(e.to_string()))
+        Err(e) => Err(TomlError::py_err(e.to_string())),
     }
 }
 
@@ -88,10 +88,14 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                     $map.serialize_key(&key)?;
                 } else {
                     return Err(ser::Error::custom(format_args!(
-                        "Dictionary key is not a string: {:?}", $key
+                        "Dictionary key is not a string: {:?}",
+                        $key
                     )));
                 }
-                $map.serialize_value(&SerializePyObject {py: self.py, obj: $value})?;
+                $map.serialize_value(&SerializePyObject {
+                    py: self.py,
+                    obj: $value,
+                })?;
             };
         }
 
@@ -127,9 +131,12 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 cast!(|x: $type| {
                     let mut seq = serializer.serialize_seq(Some(x.len()))?;
                     for element in x {
-                        seq.serialize_element(&SerializePyObject {py: self.py, obj: element})?
+                        seq.serialize_element(&SerializePyObject {
+                            py: self.py,
+                            obj: element,
+                        })?
                     }
-                    return seq.end()
+                    return seq.end();
                 });
             };
         }
@@ -138,12 +145,17 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
         to_seq!(&PyTuple);
 
         cast!(|x: &PyDateTime| {
-            let raw_str: &str = x.str().map_err(debug_py_err)?.extract().map_err(debug_py_err)?;
+            let raw_str: &str = x
+                .str()
+                .map_err(debug_py_err)?
+                .extract()
+                .map_err(debug_py_err)?;
             match toml::value::Datetime::from_str(raw_str) {
                 Ok(dt) => dt.serialize(serializer),
                 Err(e) => Err(ser::Error::custom(format_args!(
-                    "unable to convert datetime string to toml datetime object {:?}", e
-                )))
+                    "unable to convert datetime string to toml datetime object {:?}",
+                    e
+                ))),
             }
         });
 
@@ -161,26 +173,26 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
         let name = self.obj.get_type().name();
         match self.obj.repr() {
             Ok(repr) => Err(ser::Error::custom(format_args!(
-                "{} is not serializable to TOML: {}", name, repr,
+                "{} is not serializable to TOML: {}",
+                name, repr,
             ))),
             Err(_) => Err(ser::Error::custom(format_args!(
-                "{} is not serializable to TOML", name,
+                "{} is not serializable to TOML",
+                name,
             ))),
         }
     }
-
 }
 
 #[pyfunction]
 fn serialize(py: Python, obj: PyObject) -> PyResult<String> {
     let s = SerializePyObject {
         py,
-        obj: obj.extract(py)?
+        obj: obj.extract(py)?,
     };
     match to_toml_string(&s) {
         Ok(s) => Ok(s),
-        Err(e) => Err(TomlError::py_err(e.to_string()))
-
+        Err(e) => Err(TomlError::py_err(e.to_string())),
     }
 }
 
