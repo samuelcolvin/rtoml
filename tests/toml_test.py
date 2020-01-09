@@ -8,7 +8,7 @@ ROOT_DIR = (Path(__file__).parent / '..').resolve()
 
 sys.path.append(str(ROOT_DIR))
 
-import rtoml
+import rtoml  # noqa
 
 
 def simplify(value):
