@@ -2,7 +2,7 @@
 isort = isort -rc rtoml tests
 black = black -S -l 120 --target-version py36 rtoml tests
 
-install-develop:
+install:
 	pip install -U pip wheel setuptools setuptools-rust
 	pip install -U -r tests/requirements.txt
 
@@ -14,18 +14,17 @@ build:
 format:
 	$(isort)
 	$(black)
+	cargo fmt
 
 .PHONY: lint
 lint:
 	flake8 rtoml/ tests/
 	$(isort) --check-only
 	$(black) --check
-
-.PHONY: check-dist
-check-dist:
-	python setup.py check -ms
-	python setup.py sdist
-	twine check dist/*
+	cargo fmt --version
+	cargo fmt --all -- --check
+	cargo clippy --version
+	cargo clippy -- -D warnings
 
 .PHONY: mypy
 mypy:

@@ -41,3 +41,7 @@ def test_invalid_type():
 def test_invalid_toml():
     with pytest.raises(rtoml.TomlError, match='invalid number at line 1 column 5'):
         rtoml.load('x = y')
+
+
+def test_version():
+    assert isinstance(rtoml.VERSION, str)
