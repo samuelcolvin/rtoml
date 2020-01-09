@@ -62,7 +62,7 @@ jobs:
     - run: pip install -U pip setuptools setuptools-rust cibuildwheel wheel
 
     - run: |
-        cibuildwheel --output-dir dist
+        cibuildwheel --platform linux --output-dir dist
         ls -lah
         ls -lah dist/
       env:
