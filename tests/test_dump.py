@@ -15,10 +15,10 @@ import rtoml
         ({'x': datetime(1979, 5, 27, 7, 32)}, 'x = 1979-05-27T07:32:00\n'),
         # order changed to avoid https://github.com/alexcrichton/toml-rs/issues/142
         ({'x': {'a': 1}, 'y': 4}, 'y = 4\n\n[x]\na = 1\n'),
+        ((1, 2, 3), '[1, 2, 3]'),
     ],
 )
 def test_dumps(input_obj, output_toml):
-    debug(rtoml.dumps(input_obj))
     assert rtoml.dumps(input_obj) == output_toml
 
 

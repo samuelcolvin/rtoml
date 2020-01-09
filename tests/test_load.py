@@ -113,7 +113,6 @@ hosts = [
     ],
 )
 def test_load(input_toml, output_obj):
-    debug(rtoml.load(input_toml))
     assert rtoml.load(input_toml) == output_obj
 
 
