@@ -67,5 +67,6 @@ jobs:
         ls -lah dist/
       env:
         CIBW_BUILD: 'cp37-manylinux1_x86_64 cp37-manylinux1_i686 cp38-manylinux1_x86_64 cp38-manylinux1_i686'
-        CIBW_BEFORE_BUILD: 'source {project}/install-rust.sh'
+        CIBW_BEFORE_BUILD: 'source {project}/.github/workflows/install-rust.sh'
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
+        CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
