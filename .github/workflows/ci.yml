@@ -65,7 +65,8 @@ jobs:
       with:
         python-version: 3.7
 
-    - run: pip install -U pip setuptools setuptools-rust cibuildwheel wheel twine
+    - name: install python dependencies
+      run: pip install -U pip setuptools setuptools-rust cibuildwheel wheel twine
 
     - name: build binaries
       run: cibuildwheel --platform linux --output-dir dist
@@ -77,9 +78,10 @@ jobs:
 
     - name: upload to pypi
       run: |
+        python setup.py sdist
         ls -lah dist/
         twine check dist/*
         twine upload dist/*
       env:
-        TWINE_USERNAME: samuelcolvin
+        TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.pypi_token }}
