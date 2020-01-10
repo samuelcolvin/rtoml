@@ -58,8 +58,8 @@ jobs:
         file: ./coverage.xml
 
   build:
-#    needs: test
-#    if: success() && startsWith(github.ref, 'refs/tags/')
+    needs: test
+    if: success()  # && startsWith(github.ref, 'refs/tags/')
     strategy:
       matrix:
         os:
