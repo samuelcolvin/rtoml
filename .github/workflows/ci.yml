@@ -58,12 +58,12 @@ jobs:
         file: ./coverage.xml
 
   build:
-    needs: test
-    if: success()  # && startsWith(github.ref, 'refs/tags/')
+#    needs: test
+#    if: success() && startsWith(github.ref, 'refs/tags/')
     strategy:
       matrix:
         os:
-        - linux
+        - ubuntu
         - macos
         - windows
         target:
@@ -71,15 +71,15 @@ jobs:
         - 'cp38-*'
         - 'sdist'
         include:
-        - os: linux
-          runs-on: ubuntu
+        - os: ubuntu
+          platform: linux
         exclude:
         - os: macos
           target: sdist
         - os: windows
           target: sdist
 
-    runs-on: ${{ format('{}-latest', matrix.runs-on || matrix.os) }}
+    runs-on: ${{ format('{0}-latest', matrix.os) }}
     steps:
     - uses: actions/checkout@v2
 
@@ -97,10 +97,11 @@ jobs:
 
     - name: build binaries
       if: matrix.target != 'sdist'
-      run: cibuildwheel --output-dir dist
+      run: 'cibuildwheel --output-dir dist --platform "${platform:-$os}"'
       env:
+        platform: ${{ matrix.platform }}
+        os: ${{ matrix.os }}
         CIBW_BUILD: ${{ matrix.target }}
-        CIBW_PLATFORM: ${{ matrix.os }}
         CIBW_BEFORE_BUILD: '{project}/.github/workflows/install-rust.sh'
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
