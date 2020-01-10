@@ -105,6 +105,39 @@ hosts = [
                 'title': 'TOML Example',
             },
         ),
+        (
+            """
+[[fruit]]
+  name = "apple"
+
+  [fruit.physical]  # subtable
+    color = "red"
+    shape = "round"
+
+  [[fruit.variety]]  # nested array of tables
+    name = "red delicious"
+
+  [[fruit.variety]]
+    name = "granny smith"
+
+[[fruit]]
+  name = "banana"
+
+  [[fruit.variety]]
+    name = "plantain"
+""",
+            {
+                'fruit': [
+                    {
+                        'name': 'apple',
+                        'physical': {'color': 'red', 'shape': 'round'},
+                        'variety': [{'name': 'red delicious'}, {'name': 'granny smith'}],
+                    },
+                    {'name': 'banana', 'variety': [{'name': 'plantain'}]},
+                ]
+            },
+        ),
+        ("""[ j . "ʞ" . 'l' ]""", {'j': {'ʞ': {'l': {}}}}),
     ],
 )
 def test_load(input_toml, output_obj):
@@ -147,3 +180,23 @@ def test_example():
     # check it looks about right
     assert isinstance(module.obj, dict)
     assert module.obj['title'] == 'TOML Example'
+
+
+# waiting for https://github.com/alexcrichton/toml-rs/issues/357 to be released
+@pytest.mark.xfail
+def test_mixed_array():
+    assert rtoml.loads('x = [1.1, 2, 3.3]') == {'x': [1.1, 2, 3.3]}
+
+
+# https://github.com/alexcrichton/toml-rs/issues/367
+@pytest.mark.xfail
+def test_subtable():
+    s = """\
+[fruit]
+apple.color = "red"
+apple.taste.sweet = true
+
+[fruit.apple.texture]  # you can add sub-tables
+smooth = true
+"""
+    assert rtoml.loads(s) == ...
