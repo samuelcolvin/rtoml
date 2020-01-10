@@ -1,0 +1,247 @@
+# built from combination in https://github.com/toml-lang/toml
+
+# This is a TOML document.
+
+title = "TOML Example"
+
+[owner]
+name = "Tom Preston-Werner"
+dob = 1979-05-27T07:32:00-08:00 # First class dates
+
+[database]
+server = "192.168.1.1"
+ports = [ 8001, 8001, 8002 ]
+connection_max = 5000
+enabled = true
+
+[servers]
+
+  # Indentation (tabs and/or spaces) is allowed but not required
+  [servers.alpha]
+  ip = "10.0.0.1"
+  dc = "eqdc10"
+
+  [servers.beta]
+  ip = "10.0.0.2"
+  dc = "eqdc10"
+
+[clients]
+data = [ ["gamma", "delta"], [1, 2] ]
+
+# Line breaks are OK when inside arrays
+hosts = [
+  "alpha",
+  "omega"
+]
+apple.type = "fruit"
+apple.skin = "thin"
+apple.color = "red"
+
+orange.type = "fruit"
+orange.skin = "thick"
+orange.color = "orange"
+
+[strings]
+str0 = """
+Roses are red
+Violets are blue"""
+
+# The following strings are byte-for-byte equivalent:
+str1 = "The quick brown fox jumps over the lazy dog."
+
+str2 = """
+The quick brown \
+
+
+  fox jumps over \
+    the lazy dog."""
+
+str3 = """\
+       The quick brown \
+       fox jumps over \
+       the lazy dog.\
+       """
+
+str4 = """Here are two quotation marks: "". Simple enough."""
+str5 = """Here are three quotation marks: ""\"."""
+str6 = """Here are fifteen quotation marks: ""\"""\"""\"""\"""\"."""
+
+# What you see is what you get.
+winpath  = 'C:\Users\nodejs\templates'
+winpath2 = '\\ServerX\admin$\system32\'
+quoted   = 'Tom "Dubs" Preston-Werner'
+regex    = '<\i\c*\s*>'
+
+regex2 = '''I [dw]on't need \d{2} apples'''
+lines  = '''
+The first newline is
+trimmed in raw strings.
+   All other whitespace
+   is preserved.
+'''
+
+quot15 = '''Here are fifteen quotation marks: """""""""""""""'''
+
+apos15 = "Here are fifteen apostrophes: '''''''''''''''"
+
+# this breaks uiri/toml
+#str = ''''That's still pointless', she said.'''
+
+[numbers]
+int1 = +99
+int2 = 42
+int3 = 0
+int4 = -17
+
+int5 = 1_000
+int6 = 5_349_221
+int7 = 1_2_3_4_5     # VALID but discouraged
+
+# hexadecimal with prefix `0x`
+hex1 = 0xDEADBEEF
+hex2 = 0xdeadbeef
+hex3 = 0xdead_beef
+
+# octal with prefix `0o`
+oct1 = 0o01234567
+oct2 = 0o755 # useful for Unix file permissions
+
+# binary with prefix `0b`
+bin1 = 0b11010110
+
+# fractional
+flt1 = +1.0
+flt2 = 3.1415
+flt3 = -0.01
+
+# exponent
+flt4 = 5e+22
+flt5 = 1e06
+flt6 = -2E-2
+
+# both
+flt7 = 6.626e-34
+
+# infinity
+sf1 = inf  # positive infinity
+sf2 = +inf # positive infinity
+sf3 = -inf # negative infinity
+
+# not a number
+sf4 = nan  # actual sNaN/qNaN encoding is implementation specific
+sf5 = +nan # same as `nan`
+sf6 = -nan # valid, actual encoding is implementation specific
+
+bool1 = true
+bool2 = false
+
+[dates]
+odt1 = 1979-05-27T07:32:00Z
+odt2 = 1979-05-27T00:32:00-07:00
+odt3 = 1979-05-27T00:32:00.999999-07:00
+
+# breaks tomlkit
+#odt4 = 1979-05-27 07:32:00Z
+
+ldt1 = 1979-05-27T07:32:00
+ldt2 = 1979-05-27T00:32:00.999999
+ld1 = 1979-05-27
+lt1 = 07:32:00
+lt2 = 00:32:00.999999
+
+[lists]
+integers = [ 1, 2, 3 ]
+colors = [ "red", "yellow", "green" ]
+nested_array_of_int = [ [ 1, 2 ], [3, 4, 5] ]
+nested_mixed_array = [ [ 1, 2 ], ["a", "b", "c"] ]
+#string_array = [ "all", 'strings', """are the same""", '''type''' ]
+
+# Mixed-type arrays are allowed (in future)
+#numbers = [ 0.1, 0.2, 0.5, 1, 2, 5 ]
+#contributors = [
+#  "Foo Bar <foo@example.com>",
+#  { name = "Baz Qux", email = "bazqux@example.com", url = "https://example.com/bazqux" }
+#]
+
+integers2 = [
+  1, 2, 3
+]
+
+integers3 = [
+  1,
+  2, # this is ok
+]
+
+[tables.table-1]
+key1 = "some string"
+key2 = 123
+
+[tables.table-2]
+key1 = "another string"
+key2 = 456
+
+[tables.dog."tater.man"]
+type.name = "pug"
+
+# breaks tomlkit
+#[tables.a.b.c]            # this is best practice
+#[ tables.d.e.f ]          # same as [d.e.f]
+#[ tables  .  g .  h  . i ]    # same as [g.h.i]
+#[ tables  .  j . "ʞ" . 'l' ]  # same as [j."ʞ".'l']
+
+# [x] you
+# [x.y] don't
+# [x.y.z] need these
+[tables.x.y.z.w] # for this to work
+
+[tables] # defining a super-table afterwards is ok
+
+[fruit]
+apple.color = "red"
+apple.taste.sweet = true
+
+#[fruit.pear.texture]  # you can add sub-tables
+#smooth = true
+
+tables.name = { first = "Tom", last = "Preston-Werner" }
+tables.point = { x = 1, y = 2 }
+tables.animal = { type.name = "pug" }
+
+[tables.product]
+type = { name = "Nail" }
+# type.edible = false  # INVALID
+
+[[products]]
+name = "Hammer"
+sku = 738594937
+
+[[products]]
+
+[[products]]
+name = "Nail"
+sku = 284758393
+
+color = "gray"
+
+[[spoons]]
+  name = "apple"
+
+  [spoons.physical]  # subtable
+    color = "red"
+    shape = "round"
+
+  [[spoons.variety]]  # nested array of tables
+    name = "red delicious"
+
+  [[spoons.variety]]
+    name = "granny smith"
+
+[[spoons]]
+  name = "banana"
+
+  [[fruit.variety]]
+    name = "plantain"
+
+points = [ { x = 1, y = 2, z = 3 },
+           { x = 7, y = 8, z = 9 },
+           { x = 2, y = 4, z = 8 } ]
