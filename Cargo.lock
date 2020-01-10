@@ -229,7 +229,7 @@ checksum = "11a7e20d1cce64ef2fed88b66d347f88bd9babb82845b2b858f3edbf59a4f716"
 
 [[package]]
 name = "rtoml"
-version = "0.2.0-alpha"
+version = "0.3.0-alpha"
 dependencies = [
  "pyo3",
  "serde",
