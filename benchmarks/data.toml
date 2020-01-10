@@ -63,7 +63,6 @@ str3 = """\
        """
 
 str4 = """Here are two quotation marks: "". Simple enough."""
-# str5 = """Here are three quotation marks: """."""  # INVALID
 str5 = """Here are three quotation marks: ""\"."""
 str6 = """Here are fifteen quotation marks: ""\"""\"""\"""\"""\"."""
 
@@ -83,11 +82,10 @@ trimmed in raw strings.
 
 quot15 = '''Here are fifteen quotation marks: """""""""""""""'''
 
-# apos15 = '''Here are fifteen apostrophes: ''''''''''''''''''  # INVALID
 apos15 = "Here are fifteen apostrophes: '''''''''''''''"
 
-# 'That's still pointless', she said.
-str = ''''That's still pointless', she said.'''
+# this breaks uiri/toml
+#str = ''''That's still pointless', she said.'''
 
 [numbers]
 int1 = +99
@@ -143,7 +141,7 @@ odt2 = 1979-05-27T00:32:00-07:00
 odt3 = 1979-05-27T00:32:00.999999-07:00
 
 # breaks tomlkit
-odt4 = 1979-05-27 07:32:00Z
+#odt4 = 1979-05-27 07:32:00Z
 
 ldt1 = 1979-05-27T07:32:00
 ldt2 = 1979-05-27T00:32:00.999999
@@ -156,7 +154,7 @@ integers = [ 1, 2, 3 ]
 colors = [ "red", "yellow", "green" ]
 nested_array_of_int = [ [ 1, 2 ], [3, 4, 5] ]
 nested_mixed_array = [ [ 1, 2 ], ["a", "b", "c"] ]
-string_array = [ "all", 'strings', """are the same""", '''type''' ]
+#string_array = [ "all", 'strings', """are the same""", '''type''' ]
 
 # Mixed-type arrays are allowed (in future)
 #numbers = [ 0.1, 0.2, 0.5, 1, 2, 5 ]
@@ -185,10 +183,11 @@ key2 = 456
 [tables.dog."tater.man"]
 type.name = "pug"
 
-[tables.a.b.c]            # this is best practice
-[ tables.d.e.f ]          # same as [d.e.f]
-[ tables  .  g .  h  . i ]    # same as [g.h.i]
-[ tables  .  j . "ʞ" . 'l' ]  # same as [j."ʞ".'l']
+# breaks tomlkit
+#[tables.a.b.c]            # this is best practice
+#[ tables.d.e.f ]          # same as [d.e.f]
+#[ tables  .  g .  h  . i ]    # same as [g.h.i]
+#[ tables  .  j . "ʞ" . 'l' ]  # same as [j."ʞ".'l']
 
 # [x] you
 # [x.y] don't
