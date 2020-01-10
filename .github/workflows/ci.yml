@@ -58,16 +58,28 @@ jobs:
         file: ./coverage.xml
 
   build:
-    needs: test
-    if: success() && startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
+#    needs: test
+#    if: success() && startsWith(github.ref, 'refs/tags/')
     strategy:
       matrix:
+        os:
+        - linux
+        - macos
+        - windows
         target:
         - 'cp37-*'
         - 'cp38-*'
         - 'sdist'
+        include:
+        - os: linux
+          runs-on: ubuntu
+        exclude:
+        - os: macos
+          target: sdist
+        - os: windows
+          target: sdist
 
+    runs-on: ${{ format('{}-latest', matrix.runs-on || matrix.os) }}
     steps:
     - uses: actions/checkout@v2
 
@@ -88,7 +100,7 @@ jobs:
       run: cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: ${{ matrix.target }}
-        CIBW_PLATFORM: linux
+        CIBW_PLATFORM: ${{ matrix.os }}
         CIBW_BEFORE_BUILD: '{project}/.github/workflows/install-rust.sh'
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
@@ -97,7 +109,7 @@ jobs:
       run: |
         ls -lah dist/
         twine check dist/*
-        twine upload dist/*
+#        twine upload dist/*
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.pypi_token }}
