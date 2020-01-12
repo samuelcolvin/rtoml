@@ -105,7 +105,7 @@ jobs:
       run: python setup.py sdist
 
     - name: build binaries for linux
-      if: matrix.target != 'sdist' && matrix.os == 'linux'
+      if: matrix.target != 'sdist' && matrix.os == 'ubuntu'
       run: cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: ${{ matrix.target }}
@@ -119,6 +119,7 @@ jobs:
       env:
         CIBW_BUILD: ${{ matrix.target }}
         CIBW_PLATFORM: macos
+        CIBW_BEFORE_BUILD: 'pip install setuptools-rust'
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
 
