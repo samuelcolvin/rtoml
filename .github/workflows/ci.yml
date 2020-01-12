@@ -58,7 +58,7 @@ jobs:
         file: ./coverage.xml
 
   build:
-    name: build and release for python ${{ matrix.python-version || '3.7' }} on ${{ matrix.platform || matrix.os }}
+    name: build py${{ matrix.python-version || '3.7' }} on ${{ matrix.platform || matrix.os }}
     needs: test
     strategy:
       fail-fast: false
@@ -121,7 +121,6 @@ jobs:
         CIBW_ENVIRONMENT_WINDOWS: 'PATH="$HOME\.cargo\bin:$PATH"'
 
     - name: list dist files
-      if: matrix.os == 'windows'
       run: ${{ matrix.ls || 'ls -lh' }} dist/
 
     - name: twine check
