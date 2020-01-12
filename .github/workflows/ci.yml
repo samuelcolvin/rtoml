@@ -92,7 +92,7 @@ jobs:
     - name: install python dependencies
       run: |
         pip install -U pip setuptools setuptools-rust wheel twine
-        pip install 'git+https://github.com/joerick/cibuildwheel.git@refs/pull/194/head#egg=cibuildwheel'
+        pip install 'git+https://github.com/samuelcolvin/cibuildwheel.git@github-actions#egg=cibuildwheel'
 
     - name: build sdist
       if: matrix.target == 'sdist'
