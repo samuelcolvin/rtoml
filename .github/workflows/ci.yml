@@ -115,7 +115,7 @@ jobs:
         CIBW_BEFORE_BUILD_MACOS: 'pip install -U setuptools-rust'
         CIBW_BEFORE_BUILD_LINUX: 'pip install -U setuptools-rust && curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=nightly --profile=minimal -y'
         # pip install -U setuptools-rust isn't required on windows
-        CIBW_BEFORE_BUILD_WINDOWS: 'rustc --version'
+        CIBW_BEFORE_BUILD_WINDOWS: 'rustup default nightly'
         CIBW_TEST_COMMAND: 'python -c "import rtoml; print(rtoml.VERSION)"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
         CIBW_ENVIRONMENT_WINDOWS: 'PATH="$HOME\.cargo\bin:$PATH"'
