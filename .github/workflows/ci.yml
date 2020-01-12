@@ -86,22 +86,23 @@ jobs:
       with:
         python-version: 3.7
 
+    - name: set up rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+
+    - run: rustc --version
+
     - name: install python dependencies
       run: |
         pip install -U pip setuptools setuptools-rust wheel twine
         pip install 'git+https://github.com/samuelcolvin/cibuildwheel.git@github-actions#egg=cibuildwheel'
 
     - name: build sdist
-      if: matrix.target == 'sdist' && matrix.os == 'linux'
+      if: matrix.target == 'sdist'
       run: python setup.py sdist
-
-    - name: install rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly
-        override: true
-        components: rustfmt, clippy
 
     - name: build binaries for linux
       if: matrix.target != 'sdist' && matrix.os == 'linux'
@@ -109,7 +110,6 @@ jobs:
       env:
         CIBW_BUILD: ${{ matrix.target }}
         CIBW_PLATFORM: linux
-        CIBW_BEFORE_BUILD: '{project}/.github/workflows/install-rust.sh'
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
 
@@ -119,7 +119,6 @@ jobs:
       env:
         CIBW_BUILD: ${{ matrix.target }}
         CIBW_PLATFORM: macos
-        CIBW_BEFORE_BUILD: '{project}/.github/workflows/install-rust.sh'
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
 
@@ -129,7 +128,6 @@ jobs:
       env:
         CIBW_BUILD: ${{ matrix.target }}
         CIBW_PLATFORM: windows
-        CIBW_BEFORE_BUILD: 'pip install setuptools-rust'
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
         CIBW_ENVIRONMENT: 'PATH="$HOME\.cargo\bin:$PATH"'
 
