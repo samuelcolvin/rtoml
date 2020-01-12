@@ -64,25 +64,20 @@ jobs:
       fail-fast: false
       matrix:
         os:
-        - ubuntu
-        - macos
-        - windows
+        - ubuntu-latest
+        - macos-latest
+        - windows-latest
         target:
         - 'cp37-*'
         - 'cp38-*'
         - 'sdist'
-        include:
-        - os: ubuntu
-          platform: linux
-        - os: windows
-          before_build: '{project}\.github\workflows\install-rust.sh'
         exclude:
         - os: macos
           target: sdist
         - os: windows
           target: sdist
 
-    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
 
@@ -97,18 +92,46 @@ jobs:
         pip install 'git+https://github.com/samuelcolvin/cibuildwheel.git@github-actions#egg=cibuildwheel'
 
     - name: build sdist
-      if: matrix.target == 'sdist'
+      if: matrix.target == 'sdist' && matrix.os == 'linux'
       run: python setup.py sdist
 
-    - name: build binaries
-      if: matrix.target != 'sdist'
+    - name: install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+        components: rustfmt, clippy
+
+    - name: build binaries for linux
+      if: matrix.target != 'sdist' && matrix.os == 'linux'
       run: cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: ${{ matrix.target }}
-        CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
-        CIBW_BEFORE_BUILD: ${{ matrix.before_build || '{project}/.github/workflows/install-rust.sh' }}
+        CIBW_PLATFORM: linux
+        CIBW_BEFORE_BUILD: '{project}/.github/workflows/install-rust.sh'
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
+
+    - name: build binaries for macos
+      if: matrix.os == 'macos'
+      run: cibuildwheel --output-dir dist
+      env:
+        CIBW_BUILD: ${{ matrix.target }}
+        CIBW_PLATFORM: macos
+        CIBW_BEFORE_BUILD: '{project}/.github/workflows/install-rust.sh'
+        CIBW_TEST_COMMAND: 'python -c "import rtoml"'
+        CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
+
+    - name: build binaries for windows
+      if: matrix.os == 'windows'
+      run: cibuildwheel --output-dir dist
+      env:
+        CIBW_BUILD: ${{ matrix.target }}
+        CIBW_PLATFORM: windows
+        CIBW_BEFORE_BUILD: 'pip install setuptools-rust'
+        CIBW_TEST_COMMAND: 'python -c "import rtoml"'
+        CIBW_ENVIRONMENT: 'PATH="$HOME\.cargo\bin:$PATH"'
 
     - name: upload to pypi
       run: |
