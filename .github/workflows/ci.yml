@@ -75,7 +75,7 @@ jobs:
           platform: linux
         - target: 'cp38-*'
           python-version: 3.8
-        - target: windows
+        - os: windows
           ls: dir
 
     runs-on: ${{ format('{0}-latest', matrix.os) }}
