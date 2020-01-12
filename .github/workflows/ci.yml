@@ -74,6 +74,8 @@ jobs:
         include:
         - os: ubuntu
           platform: linux
+        - os: windows
+          before_build: '{project}\.github\workflows\install-rust.sh'
         exclude:
         - os: macos
           target: sdist
@@ -104,7 +106,7 @@ jobs:
       env:
         CIBW_BUILD: ${{ matrix.target }}
         CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
-        CIBW_BEFORE_BUILD: '{project}/.github/workflows/install-rust.sh'
+        CIBW_BEFORE_BUILD: ${{ matrix.before_build || '{project}/.github/workflows/install-rust.sh' }}
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
 
