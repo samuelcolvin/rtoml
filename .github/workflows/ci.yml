@@ -90,6 +90,7 @@ jobs:
         python-version: 3.7
 
     - name: set up rust
+      if: matrix.target != 'sdist'
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
@@ -111,9 +112,10 @@ jobs:
       env:
         CIBW_BUILD: ${{ matrix.target }}
         CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
-        CIBW_BEFORE_BUILD: 'pip install -U setuptools-rust && rustc --version'
+        CIBW_BEFORE_BUILD: 'pip install -U setuptools-rust'
+        # pip install -U setuptools-rust isn't required on windows
         CIBW_BEFORE_BUILD_WINDOWS: 'rustc --version'
-        CIBW_TEST_COMMAND: 'python -c "import rtoml"'
+        CIBW_TEST_COMMAND: 'python -c "import rtoml; print(rtoml.VERSION)"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
         CIBW_ENVIRONMENT_WINDOWS: 'PATH="$HOME\.cargo\bin:$PATH"'
 
