@@ -71,6 +71,9 @@ jobs:
         - 'cp37-*'
         - 'cp38-*'
         - 'sdist'
+        include:
+        - os: ubuntu
+          platform: linux
         exclude:
         - os: macos
           target: sdist
@@ -93,8 +96,6 @@ jobs:
         toolchain: nightly
         override: true
 
-    - run: rustc --version
-
     - name: install python dependencies
       run: |
         pip install -U pip setuptools setuptools-rust wheel twine
@@ -104,33 +105,17 @@ jobs:
       if: matrix.target == 'sdist'
       run: python setup.py sdist
 
-    - name: build binaries for linux
-      if: matrix.target != 'sdist' && matrix.os == 'ubuntu'
+    - name: build binaries
+      if: matrix.target != 'sdist'
       run: cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: ${{ matrix.target }}
-        CIBW_PLATFORM: linux
+        CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
+        CIBW_BEFORE_BUILD: 'pip install -U setuptools-rust && rustc --version'
+        CIBW_BEFORE_BUILD_WINDOWS: 'rustc --version'
         CIBW_TEST_COMMAND: 'python -c "import rtoml"'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
-
-    - name: build binaries for macos
-      if: matrix.os == 'macos'
-      run: cibuildwheel --output-dir dist
-      env:
-        CIBW_BUILD: ${{ matrix.target }}
-        CIBW_PLATFORM: macos
-        CIBW_BEFORE_BUILD: 'pip install setuptools-rust'
-        CIBW_TEST_COMMAND: 'python -c "import rtoml"'
-        CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
-
-    - name: build binaries for windows
-      if: matrix.os == 'windows'
-      run: cibuildwheel --output-dir dist
-      env:
-        CIBW_BUILD: ${{ matrix.target }}
-        CIBW_PLATFORM: windows
-        CIBW_TEST_COMMAND: 'python -c "import rtoml"'
-        CIBW_ENVIRONMENT: 'PATH="$HOME\.cargo\bin:$PATH"'
+        CIBW_ENVIRONMENT_WINDOWS: 'PATH="$HOME\.cargo\bin:$PATH"'
 
     - name: upload to pypi
       run: |
