@@ -50,6 +50,8 @@ jobs:
     - name: run toml-test
       run: |
         go get github.com/BurntSushi/toml-test
+        # these examples are now valid
+        rm `find ~/go/src/github.com/BurntSushi/toml-test/tests/invalid -name "array-mixed*"`
         ~/go/bin/toml-test ./tests/toml_test.py
 
     - uses: codecov/codecov-action@v1.0.5
