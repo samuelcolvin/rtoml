@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# used to test against https://github.com/BurntSushi/toml-test
-# via `~/go/bin/toml-test ./tests/toml_test.py`
+# used to test decoding against https://github.com/BurntSushi/toml-test
+# via `make toml-test` or `~/go/bin/toml-test ./tests/toml_test.py`
 import json
 import sys
 from datetime import datetime, date, time

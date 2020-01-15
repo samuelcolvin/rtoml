@@ -1,4 +1,4 @@
-.DEFAULT_GOAL := all
+.DEFAULT_GOAL := dev
 isort = isort -rc rtoml tests
 black = black -S -l 120 --target-version py36 rtoml tests
 
@@ -39,8 +39,15 @@ testcov: build test
 	@echo "building coverage html"
 	@coverage html
 
-.PHONY: all
-all: testcov lint mypy
+.PHONY: dev
+dev: lint mypy testcov
+
+
+.PHONY: toml-tests
+toml-tests:
+	~/go/bin/toml-test ./tests/toml_test_decoding.py
+	~/go/bin/toml-test -encoder ./tests/toml_test_encoding.py
+
 
 .PHONY: clean
 clean:
