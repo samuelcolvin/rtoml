@@ -47,10 +47,11 @@ jobs:
       with:
         go-version: 1.13.x
 
-    - name: run toml-test
-      run: |
-        go get github.com/BurntSushi/toml-test
-        ~/go/bin/toml-test ./tests/toml_test.py
+    - name: install tom-test
+      run: go get github.com/BurntSushi/toml-test
+
+    - name: toml-test
+      run: make toml-test
 
     - uses: codecov/codecov-action@v1.0.5
       with:
