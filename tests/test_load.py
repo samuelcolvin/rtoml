@@ -182,8 +182,6 @@ def test_example():
     assert module.obj['title'] == 'TOML Example'
 
 
-# waiting for https://github.com/alexcrichton/toml-rs/issues/357 to be released
-@pytest.mark.xfail
 def test_mixed_array():
     assert rtoml.loads('x = [1.1, 2, 3.3]') == {'x': [1.1, 2, 3.3]}
 

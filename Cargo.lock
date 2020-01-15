@@ -302,8 +302,7 @@ dependencies = [
 [[package]]
 name = "toml"
 version = "0.5.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01d1404644c8b12b16bfcffa4322403a91a451584daaaa7c28d3152e6cbc98cf"
+source = "git+https://github.com/alexcrichton/toml-rs#f92c15f1b88937f58b356ebdf1d95c32e818fef9"
 dependencies = [
  "serde",
 ]
