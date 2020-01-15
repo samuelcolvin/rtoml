@@ -1,6 +1,4 @@
 from datetime import date, datetime, time, timedelta, timezone
-from importlib.machinery import SourceFileLoader
-from pathlib import Path
 
 import pytest
 
@@ -169,17 +167,6 @@ def test_invalid_type():
 def test_invalid_toml():
     with pytest.raises(rtoml.TomlParsingError, match='invalid number at line 1 column 5'):
         rtoml.load('x = y')
-
-
-def test_version():
-    assert isinstance(rtoml.VERSION, str)
-
-
-def test_example():
-    module = SourceFileLoader('example', str(Path(__file__).parent / '../example.py')).load_module()
-    # check it looks about right
-    assert isinstance(module.obj, dict)
-    assert module.obj['title'] == 'TOML Example'
 
 
 # waiting for https://github.com/alexcrichton/toml-rs/issues/357 to be released
