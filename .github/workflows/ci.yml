@@ -98,17 +98,19 @@ jobs:
         override: true
 
     - name: install python dependencies
-      run: |
-        pip install -U pip setuptools wheel
-        pip install 'git+https://github.com/samuelcolvin/cibuildwheel.git@github-actions#egg=cibuildwheel'
+      run: pip install -U pip setuptools wheel
 
     - name: build sdist
       if: matrix.os == 'ubuntu' && matrix.target == 'cp37-*'
-      run: python setup.py sdist
+      run: |
+        pip install -U setuptools-rust
+        python setup.py sdist
 
     - name: build ${{ matrix.platform || matrix.os }} binaries
       if: matrix.target != 'sdist'
-      run: cibuildwheel --output-dir dist
+      run: |
+        pip install 'git+https://github.com/samuelcolvin/cibuildwheel.git@github-actions#egg=cibuildwheel'
+        cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: ${{ matrix.target }}
         CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
