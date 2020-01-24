@@ -98,7 +98,7 @@ jobs:
         override: true
 
     - name: install python dependencies
-      run: pip install -U pip setuptools wheel
+      run: pip install -U setuptools wheel
 
     - name: build sdist
       if: matrix.os == 'ubuntu' && matrix.target == 'cp37-*'
