@@ -99,7 +99,7 @@ jobs:
 
     - name: install python dependencies
       run: |
-        pip install -U pip setuptools setuptools-rust wheel twine
+        pip install -U pip setuptools wheel
         pip install 'git+https://github.com/samuelcolvin/cibuildwheel.git@github-actions#egg=cibuildwheel'
 
     - name: build sdist
@@ -127,7 +127,9 @@ jobs:
       run: ${{ matrix.ls || 'ls -lh' }} dist/
 
     - name: twine check
-      run: twine check dist/*
+      run: |
+        pip install -U twine
+        twine check dist/*
 
     - name: upload to pypi
       if: startsWith(github.ref, 'refs/tags/')
