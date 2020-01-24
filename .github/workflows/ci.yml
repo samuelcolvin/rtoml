@@ -117,7 +117,7 @@ jobs:
           pip install -U setuptools-rust &&
           curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=nightly --profile=minimal -y
         # pip install -U setuptools-rust isn't required on windows
-        CIBW_BEFORE_BUILD_WINDOWS: 'rustup default nightly'
+        CIBW_BEFORE_BUILD_WINDOWS: 'pip install -U setuptools-rust && rustup default nightly'
         CIBW_TEST_REQUIRES: 'pytest'
         CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
