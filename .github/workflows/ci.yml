@@ -112,7 +112,7 @@ jobs:
       env:
         CIBW_BUILD: ${{ matrix.target }}
         CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
-        CIBW_BEFORE_BUILD_MACOS: 'pip install -U setuptools-rust'
+        CIBW_BEFORE_BUILD_MACOS: 'pip install -U setuptools-rust && rustup default nightly'
         CIBW_BEFORE_BUILD_LINUX: >
           pip install -U setuptools-rust &&
           curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=nightly --profile=minimal -y
