@@ -36,5 +36,4 @@ def test_dump_file(tmp_path):
 
 
 def test_varied_list():
-    with pytest.raises(rtoml.TomlSerializationError):
-        rtoml.dumps([1, '2'])
+    assert rtoml.dumps({'test': [1, '2']}) == 'test = [1, "2"]\n'

@@ -169,10 +169,10 @@ def test_invalid_toml():
         rtoml.load('x = y')
 
 
-# waiting for https://github.com/alexcrichton/toml-rs/issues/357 to be released
-@pytest.mark.xfail
 def test_mixed_array():
     assert rtoml.loads('x = [1.1, 2, 3.3]') == {'x': [1.1, 2, 3.3]}
+    assert rtoml.loads('x = [1, ["Arrays are not integers."]]') == {'x': [1, ['Arrays are not integers.']]}
+    assert rtoml.loads('x = ["hi", 42]') == {'x': ['hi', 42]}
 
 
 # https://github.com/alexcrichton/toml-rs/issues/367

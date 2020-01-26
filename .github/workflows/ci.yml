@@ -50,6 +50,8 @@ jobs:
     - name: run toml-test
       run: |
         go get github.com/BurntSushi/toml-test
+        # these examples are now valid
+        rm `find ~/go/src/github.com/BurntSushi/toml-test/tests/invalid -name "array-mixed*"`
         ~/go/bin/toml-test ./tests/toml_test.py
 
     - uses: codecov/codecov-action@v1.0.5
@@ -96,26 +98,28 @@ jobs:
         override: true
 
     - name: install python dependencies
-      run: |
-        pip install -U pip setuptools setuptools-rust wheel twine
-        pip install 'git+https://github.com/samuelcolvin/cibuildwheel.git@github-actions#egg=cibuildwheel'
+      run: pip install -U setuptools wheel
 
     - name: build sdist
       if: matrix.os == 'ubuntu' && matrix.target == 'cp37-*'
-      run: python setup.py sdist
+      run: |
+        pip install -U setuptools-rust
+        python setup.py sdist
 
     - name: build ${{ matrix.platform || matrix.os }} binaries
       if: matrix.target != 'sdist'
-      run: cibuildwheel --output-dir dist
+      run: |
+        pip install 'git+https://github.com/samuelcolvin/cibuildwheel.git@github-actions#egg=cibuildwheel'
+        cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: ${{ matrix.target }}
         CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
-        CIBW_BEFORE_BUILD_MACOS: 'pip install -U setuptools-rust'
+        CIBW_BEFORE_BUILD_MACOS: 'pip install -U setuptools-rust && rustup default nightly'
         CIBW_BEFORE_BUILD_LINUX: >
           pip install -U setuptools-rust &&
           curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=nightly --profile=minimal -y
         # pip install -U setuptools-rust isn't required on windows
-        CIBW_BEFORE_BUILD_WINDOWS: 'rustup default nightly'
+        CIBW_BEFORE_BUILD_WINDOWS: 'pip install -U setuptools-rust && rustup default nightly'
         CIBW_TEST_REQUIRES: 'pytest'
         CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
@@ -125,7 +129,9 @@ jobs:
       run: ${{ matrix.ls || 'ls -lh' }} dist/
 
     - name: twine check
-      run: twine check dist/*
+      run: |
+        pip install -U twine
+        twine check dist/*
 
     - name: upload to pypi
       if: startsWith(github.ref, 'refs/tags/')
