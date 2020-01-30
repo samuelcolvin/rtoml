@@ -109,7 +109,7 @@ jobs:
     - name: build ${{ matrix.platform || matrix.os }} binaries
       if: matrix.target != 'sdist'
       run: |
-        pip install 'git+https://github.com/samuelcolvin/cibuildwheel.git@github-actions#egg=cibuildwheel'
+        pip install 'git+https://github.com/joerick/cibuildwheel.git@refs/pull/194/head'
         cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: ${{ matrix.target }}
