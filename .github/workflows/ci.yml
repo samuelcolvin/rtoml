@@ -67,7 +67,7 @@ jobs:
 
   build:
     name: build py 3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: test
+#    needs: test
     strategy:
       fail-fast: false
       matrix:
@@ -130,9 +130,10 @@ jobs:
           pip install -U setuptools-rust &&
           rustup default nightly &&
           rustup target add i686-pc-windows-gnu &&
-          rustup target list
+          rustup target list &&
+          rustup set default-host i686-pc-windows-msvc
         CIBW_ENVIRONMENT_WINDOWS: 'PATH="$UserProfile\.cargo\bin;$PATH"'
-#        CIBW_SKIP: '*-win32'
+        CIBW_SKIP: '*-win64'
 
     - name: list dist files
       run: ${{ matrix.ls || 'ls -lh' }} dist/
