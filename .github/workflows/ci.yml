@@ -109,10 +109,11 @@ jobs:
     - name: build ${{ matrix.platform || matrix.os }} binaries
       if: matrix.target != 'sdist'
       run: |
-        pip install 'git+https://github.com/samuelcolvin/cibuildwheel.git@github-actions#egg=cibuildwheel'
+        pip install 'git+https://github.com/joerick/cibuildwheel.git@refs/pull/194/head'
         cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: ${{ matrix.target }}
+        CIBW_SKIP: '*-win32'
         CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
         CIBW_BEFORE_BUILD_MACOS: 'pip install -U setuptools-rust && rustup default nightly'
         CIBW_BEFORE_BUILD_LINUX: >
@@ -123,7 +124,7 @@ jobs:
         CIBW_TEST_REQUIRES: 'pytest'
         CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
-        CIBW_ENVIRONMENT_WINDOWS: 'PATH="$HOME\.cargo\bin:$PATH"'
+        CIBW_ENVIRONMENT_WINDOWS: 'PATH="$UserProfile\.cargo\bin;$PATH"'
 
     - name: list dist files
       run: ${{ matrix.ls || 'ls -lh' }} dist/
