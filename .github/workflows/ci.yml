@@ -66,7 +66,7 @@ jobs:
         file: ./coverage.xml
 
   build:
-    name: build py 3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
+    name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
 #    needs: test
     strategy:
       fail-fast: false
@@ -102,7 +102,9 @@ jobs:
         override: true
 
     - name: install python dependencies
-      run: pip install -U setuptools wheel
+      run: |
+        pip install -U setuptools wheel
+        pip install 'git+https://github.com/joerick/cibuildwheel.git@refs/pull/194/head'
 
     - name: build sdist
       if: matrix.os == 'ubuntu' && matrix.python-version == '7'
@@ -112,28 +114,41 @@ jobs:
 
     - name: build ${{ matrix.platform || matrix.os }} binaries
       run: |
-        pip install 'git+https://github.com/joerick/cibuildwheel.git@refs/pull/194/head'
         cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
+        CIBW_SKIP: '*-win32'
         CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
         CIBW_TEST_REQUIRES: 'pytest'
         CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
-        CIBW_BEFORE_BUILD_MACOS: >
+        CIBW_ENVIRONMENT_WINDOWS: 'PATH="$UserProfile\.cargo\bin;$PATH"'
+        CIBW_BEFORE_BUILD: >
           pip install -U setuptools-rust &&
-          rustup default nightly
+          rustup default nightly &&
+          rustup show
         CIBW_BEFORE_BUILD_LINUX: >
           pip install -U setuptools-rust &&
-          curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=nightly --profile=minimal -y
-        CIBW_BEFORE_BUILD_WINDOWS: >
+          curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=nightly --profile=minimal -y &&
+          rustup show
+
+    - name: build windows 32bit binaries
+      if: matrix.os == 'windows'
+      run: |
+        cibuildwheel --output-dir dist
+      env:
+        CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
+        CIBW_SKIP: '*-win64'
+        CIBW_PLATFORM: windows
+        CIBW_TEST_REQUIRES: 'pytest'
+        CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
+        CIBW_ENVIRONMENT: 'PATH="$UserProfile\.cargo\bin;$PATH"'
+        CIBW_BEFORE_BUILD: >
           pip install -U setuptools-rust &&
           rustup default nightly &&
           rustup target add i686-pc-windows-gnu &&
-          rustup target list &&
-          rustup set default-host i686-pc-windows-msvc
-        CIBW_ENVIRONMENT_WINDOWS: 'PATH="$UserProfile\.cargo\bin;$PATH"'
-        CIBW_SKIP: '*-win64'
+          rustup set default-host i686-pc-windows-gnu &&
+          rustup show
 
     - name: list dist files
       run: ${{ matrix.ls || 'ls -lh' }} dist/
