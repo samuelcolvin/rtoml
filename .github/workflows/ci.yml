@@ -67,7 +67,7 @@ jobs:
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-#    needs: test
+    needs: test
     strategy:
       fail-fast: false
       matrix:
@@ -113,8 +113,7 @@ jobs:
         python setup.py sdist
 
     - name: build ${{ matrix.platform || matrix.os }} binaries
-      run: |
-        cibuildwheel --output-dir dist
+      run: cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
         CIBW_SKIP: '*-win32'
@@ -134,8 +133,7 @@ jobs:
 
     - name: build windows 32bit binaries
       if: matrix.os == 'windows'
-      run: |
-        cibuildwheel --output-dir dist
+      run: cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: 'cp3${{ matrix.python-version }}-win32'
         CIBW_PLATFORM: windows
