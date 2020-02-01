@@ -128,8 +128,9 @@ jobs:
           curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=nightly --profile=minimal -y
         CIBW_BEFORE_BUILD_WINDOWS: >
           pip install -U setuptools-rust &&
+          rustup default nightly &&
           rustup target add i686-pc-windows-gnu &&
-          rustup default nightly
+          rustup target list
         CIBW_ENVIRONMENT_WINDOWS: 'PATH="$UserProfile\.cargo\bin;$PATH"'
 #        CIBW_SKIP: '*-win32'
 
