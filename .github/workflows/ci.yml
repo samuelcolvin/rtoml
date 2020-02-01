@@ -145,9 +145,9 @@ jobs:
         CIBW_ENVIRONMENT: 'PATH="$UserProfile\.cargo\bin;$PATH"'
         CIBW_BEFORE_BUILD: >
           pip install -U setuptools-rust &&
-          rustup default nightly &&
-          rustup target add i686-pc-windows-gnu &&
-          rustup set default-host i686-pc-windows-gnu &&
+          rustup toolchain install nightly-i686-pc-windows-msvc &&
+          rustup target add i686-pc-windows-msvc &&
+          rustup default nightly-i686-pc-windows-msvc &&
           rustup show
 
     - name: list dist files
