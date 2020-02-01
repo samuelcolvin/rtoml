@@ -146,7 +146,8 @@ jobs:
         CIBW_BEFORE_BUILD: >
           pip install -U setuptools-rust &&
           rustup toolchain install nightly-i686-pc-windows-msvc &&
-          rustup target add i686-pc-windows-msvc &&
+          rustup target add --toolchain nightly-i686-pc-windows-msvc i686-pc-windows-msvc &&
+          rustup set default-host i686-pc-windows-msvc &&
           rustup default nightly-i686-pc-windows-msvc &&
           rustup show
 
