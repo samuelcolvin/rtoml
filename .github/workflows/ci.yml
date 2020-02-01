@@ -137,23 +137,15 @@ jobs:
       run: |
         cibuildwheel --output-dir dist
       env:
-        CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
-        CIBW_SKIP: '*-win_amd64'
+        CIBW_BUILD: 'cp3${{ matrix.python-version }}-win32'
         CIBW_PLATFORM: windows
         CIBW_TEST_REQUIRES: 'pytest'
         CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
         CIBW_ENVIRONMENT: 'PATH="$UserProfile\.cargo\bin;$PATH"'
         CIBW_BEFORE_BUILD: >
           pip install -U setuptools-rust &&
-          echo "rustup toolchain install nightly-i686-pc-windows-msvc..." &&
           rustup toolchain install nightly-i686-pc-windows-msvc &&
-          echo "rustup set default-host i686-pc-windows-msvc..." &&
-          rustup set default-host i686-pc-windows-msvc &&
-          echo "rustup default nightly-i686-pc-windows-msvc..." &&
-          rustup default nightly-i686-pc-windows-msvc &&
-          echo "rustup override set nightly-i686-pc-windows-msvc..." &&
           rustup override set nightly-i686-pc-windows-msvc &&
-          echo "rustup show..." &&
           rustup show
 
     - name: list dist files
