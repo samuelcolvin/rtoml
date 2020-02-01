@@ -60,7 +60,7 @@ jobs:
         file: ./coverage.xml
 
   build:
-    name: build py${{ matrix.python-version || '3.7' }} on ${{ matrix.platform || matrix.os }}
+    name: build py 3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
     needs: test
     strategy:
       fail-fast: false
@@ -69,14 +69,12 @@ jobs:
         - ubuntu
         - macos
         - windows
-        target:
-        - 'cp37-*'
-        - 'cp38-*'
+        python-version:
+        - '7'
+        - '8'
         include:
         - os: ubuntu
           platform: linux
-        - target: 'cp38-*'
-          python-version: 3.8
         - os: windows
           ls: dir
 
@@ -84,13 +82,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: set up python ${{ matrix.python-version || '3.7' }}
+    - name: set up python
       uses: actions/setup-python@v1
       with:
-        python-version: ${{ matrix.python-version || '3.7' }}
+        python-version: '3.7'
 
     - name: set up rust
-      if: matrix.target != 'sdist' && matrix.os != 'ubuntu'
+      if: matrix.os != 'ubuntu'
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
@@ -101,26 +99,23 @@ jobs:
       run: pip install -U setuptools wheel
 
     - name: build sdist
-      if: matrix.os == 'ubuntu' && matrix.target == 'cp37-*'
+      if: matrix.os == 'ubuntu' && matrix.python-version == '7'
       run: |
         pip install -U setuptools-rust
         python setup.py sdist
 
     - name: build ${{ matrix.platform || matrix.os }} binaries
-      if: matrix.target != 'sdist'
       run: |
         pip install 'git+https://github.com/joerick/cibuildwheel.git@refs/pull/194/head'
         cibuildwheel --output-dir dist
       env:
-        CIBW_BUILD: ${{ matrix.target }}
+        CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
         CIBW_SKIP: '*-win32'
         CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
-        CIBW_BEFORE_BUILD_MACOS: 'pip install -U setuptools-rust && rustup default nightly'
+        CIBW_BEFORE_BUILD: 'pip install -U setuptools-rust && rustup default nightly'
         CIBW_BEFORE_BUILD_LINUX: >
           pip install -U setuptools-rust &&
           curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=nightly --profile=minimal -y
-        # pip install -U setuptools-rust isn't required on windows
-        CIBW_BEFORE_BUILD_WINDOWS: 'pip install -U setuptools-rust && rustup default nightly'
         CIBW_TEST_REQUIRES: 'pytest'
         CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
