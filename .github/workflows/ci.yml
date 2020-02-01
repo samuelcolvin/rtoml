@@ -138,7 +138,7 @@ jobs:
         cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
-        CIBW_SKIP: '*-win64'
+        CIBW_SKIP: '*-win_amd64'
         CIBW_PLATFORM: windows
         CIBW_TEST_REQUIRES: 'pytest'
         CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
