@@ -1,6 +1,12 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '**'
+  pull_request: {}
 
 jobs:
   test:
@@ -60,7 +66,7 @@ jobs:
         file: ./coverage.xml
 
   build:
-    name: build py${{ matrix.python-version || '3.7' }} on ${{ matrix.platform || matrix.os }}
+    name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
     needs: test
     strategy:
       fail-fast: false
@@ -69,14 +75,12 @@ jobs:
         - ubuntu
         - macos
         - windows
-        target:
-        - 'cp37-*'
-        - 'cp38-*'
+        python-version:
+        - '7'
+        - '8'
         include:
         - os: ubuntu
           platform: linux
-        - target: 'cp38-*'
-          python-version: 3.8
         - os: windows
           ls: dir
 
@@ -84,13 +88,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: set up python ${{ matrix.python-version || '3.7' }}
+    - name: set up python
       uses: actions/setup-python@v1
       with:
-        python-version: ${{ matrix.python-version || '3.7' }}
+        python-version: '3.7'
 
     - name: set up rust
-      if: matrix.target != 'sdist' && matrix.os != 'ubuntu'
+      if: matrix.os != 'ubuntu'
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
@@ -98,33 +102,50 @@ jobs:
         override: true
 
     - name: install python dependencies
-      run: pip install -U setuptools wheel
+      run: |
+        pip install -U setuptools wheel
+        pip install 'git+https://github.com/joerick/cibuildwheel.git@refs/pull/194/head'
 
     - name: build sdist
-      if: matrix.os == 'ubuntu' && matrix.target == 'cp37-*'
+      if: matrix.os == 'ubuntu' && matrix.python-version == '7'
       run: |
         pip install -U setuptools-rust
         python setup.py sdist
 
     - name: build ${{ matrix.platform || matrix.os }} binaries
-      if: matrix.target != 'sdist'
-      run: |
-        pip install 'git+https://github.com/joerick/cibuildwheel.git@refs/pull/194/head'
-        cibuildwheel --output-dir dist
+      run: cibuildwheel --output-dir dist
       env:
-        CIBW_BUILD: ${{ matrix.target }}
+        CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
         CIBW_SKIP: '*-win32'
         CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
-        CIBW_BEFORE_BUILD_MACOS: 'pip install -U setuptools-rust && rustup default nightly'
-        CIBW_BEFORE_BUILD_LINUX: >
-          pip install -U setuptools-rust &&
-          curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=nightly --profile=minimal -y
-        # pip install -U setuptools-rust isn't required on windows
-        CIBW_BEFORE_BUILD_WINDOWS: 'pip install -U setuptools-rust && rustup default nightly'
         CIBW_TEST_REQUIRES: 'pytest'
         CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
         CIBW_ENVIRONMENT_WINDOWS: 'PATH="$UserProfile\.cargo\bin;$PATH"'
+        CIBW_BEFORE_BUILD: >
+          pip install -U setuptools-rust &&
+          rustup default nightly &&
+          rustup show
+        CIBW_BEFORE_BUILD_LINUX: >
+          pip install -U setuptools-rust &&
+          curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=nightly --profile=minimal -y &&
+          rustup show
+
+    - name: build windows 32bit binaries
+      if: matrix.os == 'windows'
+      run: cibuildwheel --output-dir dist
+      env:
+        CIBW_BUILD: 'cp3${{ matrix.python-version }}-win32'
+        CIBW_PLATFORM: windows
+        CIBW_TEST_REQUIRES: 'pytest'
+        CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
+        CIBW_ENVIRONMENT: 'PATH="$UserProfile\.cargo\bin;$PATH"'
+        CIBW_BEFORE_BUILD: >
+          pip install -U setuptools-rust &&
+          rustup toolchain install nightly-i686-pc-windows-msvc &&
+          rustup default nightly-i686-pc-windows-msvc &&
+          rustup override set nightly-i686-pc-windows-msvc &&
+          rustup show
 
     - name: list dist files
       run: ${{ matrix.ls || 'ls -lh' }} dist/
