@@ -7,7 +7,7 @@ use pyo3::{create_exception, wrap_pyfunction};
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::str::FromStr;
 use toml::Value::{Array, Boolean, Datetime, Float, Integer, String as TomlString, Table};
-use toml::{to_string as to_toml_string, Value};
+use toml::{to_string as to_toml_string, to_string_pretty as to_toml_string_pretty, Value};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 create_exception!(_rtoml, TomlParsingError, ValueError);
@@ -192,6 +192,18 @@ fn serialize(py: Python, obj: PyObject) -> PyResult<String> {
     }
 }
 
+#[pyfunction]
+fn serialize_pretty(py: Python, obj: PyObject) -> PyResult<String> {
+    let s = SerializePyObject {
+        py,
+        obj: obj.extract(py)?,
+    };
+    match to_toml_string_pretty(&s) {
+        Ok(s) => Ok(s),
+        Err(e) => Err(TomlSerializationError::py_err(e.to_string())),
+    }
+}
+
 #[pymodule]
 fn _rtoml(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("TomlParsingError", py.get_type::<TomlParsingError>())?;
@@ -199,5 +211,6 @@ fn _rtoml(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("VERSION", VERSION)?;
     m.add_wrapped(wrap_pyfunction!(deserialize))?;
     m.add_wrapped(wrap_pyfunction!(serialize))?;
+    m.add_wrapped(wrap_pyfunction!(serialize_pretty))?;
     Ok(())
 }
