@@ -47,17 +47,21 @@ Parse a TOML string and return a python object. (provided to match the interface
 
 #### dumps
 ```python
-def dumps(obj: Any) -> str: ...
+def dumps(obj: Any, *, pretty: bool = False) -> str: ...
 ```
 
 Serialize a python object to TOML.
 
+If `pretty` is true, output has a more "pretty" format.
+
 #### dump
 ```python
-def dump(obj: Any, file: Union[Path, TextIO]) -> int: ...
+def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False) -> int: ...
 ```
 
 Serialize a python object to TOML and write it to a file. `file` may be a `Path` or file object from `open()`.
+
+If `pretty` is true, output has a more "pretty" format.
 
 ### Example
 

@@ -8,6 +8,7 @@ import rtoml
 @pytest.mark.parametrize(
     'input_obj,output_toml',
     [
+        ({'text': '\nfoo\nbar\n'}, 'text = "\\nfoo\\nbar\\n"\n'),
         ({'foo': 'bar'}, 'foo = "bar"\n'),
         ([1, 2, 3], '[1, 2, 3]'),
         (datetime(1979, 5, 27, 7, 32), '1979-05-27T07:32:00'),
@@ -20,6 +21,19 @@ import rtoml
 )
 def test_dumps(input_obj, output_toml):
     assert rtoml.dumps(input_obj) == output_toml
+
+
+@pytest.mark.parametrize(
+    'input_obj,output_toml',
+    [
+        ({'text': '\nfoo\nbar\n'}, "text = '''\n\nfoo\nbar\n'''\n"),
+        ({'foo': 'bar'}, "foo = 'bar'\n"),
+        ([1, 2, 3], '[\n    1,\n    2,\n    3,\n]'),
+        ((1, 2, 3), '[\n    1,\n    2,\n    3,\n]'),
+    ],
+)
+def test_dumps_pretty(input_obj, output_toml):
+    assert rtoml.dumps(input_obj, pretty=True) == output_toml
 
 
 def test_dump_path(tmp_path):
