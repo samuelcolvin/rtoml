@@ -1,10 +1,14 @@
 .DEFAULT_GOAL := all
-isort = isort -rc rtoml tests
-black = black -S -l 120 --target-version py36 rtoml tests
+isort = isort rtoml tests
+black = black -S -l 120 --target-version py38 rtoml tests
 
 install:
 	pip install -U pip wheel setuptools setuptools-rust
 	pip install -U -r tests/requirements.txt
+
+.PHONY: install-all
+install-all: install
+	pip install -r tests/requirements-linting.txt
 
 .PHONY: build
 build:
@@ -19,8 +23,8 @@ format:
 .PHONY: lint
 lint:
 	flake8 rtoml/ tests/
-	$(isort) --check-only
-	$(black) --check
+	$(isort) --check-only --df
+	$(black) --check --diff
 	cargo fmt --version
 	cargo fmt --all -- --check
 	cargo clippy --version

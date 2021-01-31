@@ -165,7 +165,8 @@ def test_invalid_type():
 
 
 def test_invalid_toml():
-    with pytest.raises(rtoml.TomlParsingError, match='invalid number at line 1 column 5'):
+    m = r'^invalid TOML value, did you mean to use a quoted string\? at line 1 column 5$'
+    with pytest.raises(rtoml.TomlParsingError, match=m):
         rtoml.load('x = y')
 
 
