@@ -6,6 +6,10 @@ install:
 	pip install -U pip wheel setuptools setuptools-rust
 	pip install -U -r tests/requirements.txt
 
+.PHONY: install-all
+install-all: install
+	pip install -r tests/requirements-linting.txt
+
 .PHONY: build
 build:
 	python ./setup.py develop

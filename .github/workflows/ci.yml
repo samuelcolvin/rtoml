@@ -14,6 +14,10 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.7', '3.8']
+
+    env:
+      PYTHON: ${{ matrix.python-version }}
+
     steps:
     - uses: actions/checkout@v2
 
@@ -36,12 +40,6 @@ jobs:
     - name: build
       run: make build
 
-    - name: lint
-      run: make lint
-
-    - name: mypy
-      run: make mypy
-
     - name: test
       run: |
         make test
@@ -60,14 +58,31 @@ jobs:
         rm `find ~/go/src/github.com/BurntSushi/toml-test/tests/invalid -name "array-mixed*"`
         ~/go/bin/toml-test ./tests/toml_test.py
 
-    - uses: codecov/codecov-action@v1.0.5
+    - uses: codecov/codecov-action@v1.0.13
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
+        env_vars: PYTHON
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+
+    - run: pip install -r tests/requirements-linting.txt
+
+    - run: make lint
+    - run: make mypy
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: test
+    needs:
+      - test
+      - lint
     strategy:
       fail-fast: false
       matrix:
