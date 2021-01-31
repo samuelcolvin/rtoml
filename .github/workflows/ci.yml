@@ -145,6 +145,8 @@ jobs:
         CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
         CIBW_ENVIRONMENT_WINDOWS: 'PATH="$UserProfile\.cargo\bin;$PATH"'
+        CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
+        CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
         CIBW_BEFORE_BUILD: >
           pip install -U setuptools-rust &&
           rustup default nightly &&
