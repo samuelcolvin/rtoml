@@ -32,7 +32,6 @@ jobs:
         profile: minimal
         toolchain: nightly
         override: true
-        components: rustfmt, clippy
 
     - name: install python dependencies
       run: make install
@@ -74,6 +73,14 @@ jobs:
         python-version: '3.8'
 
     - run: pip install -r tests/requirements-linting.txt
+
+    - name: install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+        components: rustfmt, clippy
 
     - run: make lint
     - run: make mypy
