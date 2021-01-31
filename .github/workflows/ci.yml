@@ -116,7 +116,7 @@ jobs:
     - name: set up python
       uses: actions/setup-python@v1
       with:
-        python-version: '3.7'
+        python-version: '3.8'
 
     - name: set up rust
       if: matrix.os != 'ubuntu'
@@ -127,12 +127,10 @@ jobs:
         override: true
 
     - name: install python dependencies
-      run: |
-        pip install -U setuptools wheel
-        pip install 'git+https://github.com/joerick/cibuildwheel.git@refs/pull/194/head'
+      run: pip install -U setuptools wheel twine cibuildwheel
 
     - name: build sdist
-      if: matrix.os == 'ubuntu' && matrix.python-version == '7'
+      if: matrix.os == 'ubuntu' && matrix.python-version == '8'
       run: |
         pip install -U setuptools-rust
         python setup.py sdist
@@ -176,9 +174,7 @@ jobs:
       run: ${{ matrix.ls || 'ls -lh' }} dist/
 
     - name: twine check
-      run: |
-        pip install -U twine
-        twine check dist/*
+      run: twine check dist/*
 
     - name: upload to pypi
       if: startsWith(github.ref, 'refs/tags/')
