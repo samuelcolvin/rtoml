@@ -5,8 +5,8 @@ authors = ["Samuel Colvin <s@muelcolvin.com>"]
 edition = "2018"
 
 [dependencies]
-toml = "0.5.6"
-serde = "1.0.104"
+toml = "0.5.8"
+serde = "1.0.123"
 pyo3 = {version = "0.13.1", features = ["extension-module"]}
 
 [lib]
