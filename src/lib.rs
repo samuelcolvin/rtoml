@@ -1,6 +1,6 @@
 extern crate pyo3;
 
-use pyo3::exceptions::ValueError;
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
 use pyo3::{create_exception, wrap_pyfunction};
@@ -10,8 +10,8 @@ use toml::Value::{Array, Boolean, Datetime, Float, Integer, String as TomlString
 use toml::{to_string as to_toml_string, to_string_pretty as to_toml_string_pretty, Value};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-create_exception!(_rtoml, TomlParsingError, ValueError);
-create_exception!(_rtoml, TomlSerializationError, ValueError);
+create_exception!(_rtoml, TomlParsingError, PyValueError);
+create_exception!(_rtoml, TomlSerializationError, PyValueError);
 
 fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<PyObject> {
     match t {
@@ -42,7 +42,7 @@ fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<P
 fn deserialize(py: Python, toml: String, parse_datetime: PyObject) -> PyResult<PyObject> {
     match toml.parse::<Value>() {
         Ok(v) => convert_value(&v, py, &parse_datetime),
-        Err(e) => Err(TomlParsingError::py_err(e.to_string())),
+        Err(e) => Err(TomlParsingError::new_err(e.to_string())),
     }
 }
 
@@ -75,7 +75,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
 
         macro_rules! isa {
             ($v:ident, $t:ty) => {
-                self.py.is_instance::<$t, _>($v).map_err(debug_py_err)?
+                $v.is_instance::<$t>().map_err(debug_py_err)?
             };
         }
 
@@ -86,7 +86,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 } else if let Ok(key) = $key.extract::<bool>() {
                     $map.serialize_key(if key { "true" } else { "false" })?;
                 } else if let Ok(key) = $key.str() {
-                    let key = key.to_string().map_err(debug_py_err)?;
+                    let key = key.to_string();
                     $map.serialize_key(&key)?;
                 } else {
                     return Err(ser::Error::custom(format_args!(
@@ -169,7 +169,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
             return serializer.serialize_str("null");
         }
 
-        let name = self.obj.get_type().name();
+        let name = self.obj.get_type().name().map_err(debug_py_err)?;
         match self.obj.repr() {
             Ok(repr) => Err(ser::Error::custom(format_args!(
                 "{} is not serializable to TOML: {}",
@@ -188,7 +188,7 @@ fn serialize(py: Python, obj: PyObject) -> PyResult<String> {
     };
     match to_toml_string(&s) {
         Ok(s) => Ok(s),
-        Err(e) => Err(TomlSerializationError::py_err(e.to_string())),
+        Err(e) => Err(TomlSerializationError::new_err(e.to_string())),
     }
 }
 
@@ -200,7 +200,7 @@ fn serialize_pretty(py: Python, obj: PyObject) -> PyResult<String> {
     };
     match to_toml_string_pretty(&s) {
         Ok(s) => Ok(s),
-        Err(e) => Err(TomlSerializationError::py_err(e.to_string())),
+        Err(e) => Err(TomlSerializationError::new_err(e.to_string())),
     }
 }
 
