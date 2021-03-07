@@ -2,15 +2,9 @@ import pytest
 
 import rtoml
 
-"""
-When testing preserving of order we just check if
-the stringified TOML dictionary is in the same sequence
-as the original TOML string.
-"""
-
 
 @pytest.mark.parametrize(
-    'input_toml,output_toml',
+    'input_toml,expected_output',
     [
         (
             """
@@ -33,4 +27,10 @@ beta = true
     ],
 )
 def test_load_order(input_toml, expected_output):
-    assert str(rtoml.load(input_toml)) == output_toml
+    """
+    When testing preserving of order we just check if
+    the stringified TOML dictionary is in the same sequence
+    as the original TOML string.
+    """
+
+    assert str(rtoml.load(input_toml)) == expected_output
