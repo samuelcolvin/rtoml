@@ -32,5 +32,5 @@ beta = true
         ),
     ],
 )
-def test_load(input_toml, output_toml):
+def test_load_order(input_toml, expected_output):
     assert str(rtoml.load(input_toml)) == output_toml
