@@ -7,17 +7,16 @@ import rtoml
     'input_toml,expected_output',
     [
         (
-            """
-something = true
-lion = 'aslan'
+            """something = true
+lion = "aslan"
 """,
             {'something': True, 'lion': 'aslan'},
         ),
         (
-            """
-[section]
+            """[section]
 z = "last"
 a = "first"
+
 [default]
 dir = "/home"
 beta = true
@@ -30,3 +29,5 @@ def test_load_order(input_toml, expected_output):
     loaded = rtoml.load(input_toml)
     assert loaded == expected_output
     assert list(loaded.items()) == list(expected_output.items())  # check order is maintained
+
+    assert rtoml.dumps(expected_output) == input_toml
