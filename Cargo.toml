@@ -1,6 +1,6 @@
 [package]
 name = "rtoml"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Samuel Colvin <s@muelcolvin.com>"]
 edition = "2018"
 
