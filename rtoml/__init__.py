@@ -15,7 +15,7 @@ TomlSerializationError = _rtoml.TomlSerializationError
 
 def load(toml: Union[str, Path, TextIO]) -> Dict[str, Any]:
     """
-    Parse TOML via a string or file and return a python dictionary. The `toml` argument may be a `str`,
+    Parse TOML via a string or file and return a python dict. The `toml` argument may be a `str`,
     `Path` or file object from `open()`.
     """
     if isinstance(toml, Path):
@@ -28,7 +28,7 @@ def load(toml: Union[str, Path, TextIO]) -> Dict[str, Any]:
 
 def loads(toml: str) -> Dict[str, Any]:
     """
-    Parse a TOML string and return a python dictionary. (provided to match the interface of `json` and similar libraries)
+    Parse a TOML string and return a python dict. (provided to match the interface of `json` and similar libraries)
     """
     if not isinstance(toml, str):
         raise TypeError(f'invalid toml input, must be str not {type(toml)}')
