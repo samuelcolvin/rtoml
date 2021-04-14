@@ -32,18 +32,18 @@ If no binary is available on pypi for you system configuration; you'll need rust
 
 #### load
 ```python
-def load(toml: Union[str, Path, TextIO]) -> Any: ...
+def load(toml: Union[str, Path, TextIO]) -> Dict[str, Any]: ...
 ```
 
-Parse TOML via a string or file and return a python object. The `toml` argument may be a `str`,
+Parse TOML via a string or file and return a python dictionary. The `toml` argument may be a `str`,
 `Path` or file object from `open()`.
 
 #### loads
 ```python
-def loads(toml: str) -> Any: ...
+def loads(toml: str) -> Dict[str, Any]: ...
 ```
 
-Parse a TOML string and return a python object. (provided to match the interface of `json` and similar libraries)
+Parse a TOML string and return a python dictionary. (provided to match the interface of `json` and similar libraries)
 
 #### dumps
 ```python
