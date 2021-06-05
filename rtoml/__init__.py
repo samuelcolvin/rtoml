@@ -1,4 +1,3 @@
-from datetime import date, datetime, time, timezone
 from io import TextIOBase
 from pathlib import Path
 from typing import Any, Dict, TextIO, Union
@@ -32,7 +31,7 @@ def loads(toml: str) -> Dict[str, Any]:
     """
     if not isinstance(toml, str):
         raise TypeError(f'invalid toml input, must be str not {type(toml)}')
-    return _rtoml.deserialize(toml, parse_datetime)
+    return _rtoml.deserialize(toml)
 
 
 def dumps(obj: Any, *, pretty: bool = False) -> str:
@@ -60,21 +59,3 @@ def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False) -> int:
         return file.write_text(s)
     else:
         return file.write(s)
-
-
-def parse_datetime(v: str) -> Union[date, time]:
-    try:
-        return date.fromisoformat(v)
-    except ValueError:
-        tz = None
-        if v.endswith(('z', 'Z')):
-            tz = timezone.utc
-            v = v[:-1]
-        try:
-            dt = datetime.fromisoformat(v)
-        except ValueError:
-            return time.fromisoformat(v)
-        else:
-            if tz:
-                dt = dt.replace(tzinfo=tz)
-            return dt

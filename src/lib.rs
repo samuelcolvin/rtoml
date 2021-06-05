@@ -1,8 +1,9 @@
 extern crate pyo3;
 
+use chrono::{DateTime as ChronoDatetime, Datelike, ParseError, Timelike};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
+use pyo3::types::{PyAny, PyDateTime, PyDelta, PyDict, PyFloat, PyList, PyTuple, PyTzInfo};
 use pyo3::{create_exception, wrap_pyfunction};
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::str::FromStr;
@@ -13,12 +14,41 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 create_exception!(_rtoml, TomlParsingError, PyValueError);
 create_exception!(_rtoml, TomlSerializationError, PyValueError);
 
-fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<PyObject> {
+fn chrono_py_err(e: ParseError) -> PyErr {
+    PyErr::new::<PyValueError, _>(PyValueError::new_err(e.to_string()))
+}
+
+#[pyclass(extends=PyTzInfo)]
+struct TzClass {
+    seconds: i32,
+}
+
+#[pymethods]
+impl TzClass {
+    #[new]
+    fn new(seconds: i32) -> Self {
+        TzClass { seconds }
+    }
+
+    fn utcoffset<'p>(&self, py: Python<'p>, _dt: &PyDateTime) -> PyResult<&'p PyDelta> {
+        PyDelta::new(py, 0, self.seconds, 0, true)
+    }
+
+    fn tzname(&self, _py: Python<'_>, _dt: &PyDateTime) -> String {
+        String::from("+01:00") // TODO
+    }
+
+    fn dst(&self, _py: Python<'_>, _dt: &PyDateTime) -> Option<&PyDelta> {
+        None
+    }
+}
+
+fn convert_value(t: &Value, py: Python) -> PyResult<PyObject> {
     match t {
         Table(table) => {
             let d = PyDict::new(py);
             for (key, value) in table.iter() {
-                d.set_item(key.to_string(), convert_value(value, py, parse_datetime)?)?;
+                d.set_item(key.to_string(), convert_value(value, py)?)?;
             }
             Ok(d.to_object(py))
         }
@@ -26,7 +56,7 @@ fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<P
         Array(array) => {
             let mut list: Vec<PyObject> = Vec::with_capacity(array.len());
             for value in array {
-                list.push(convert_value(value, py, parse_datetime)?)
+                list.push(convert_value(value, py)?)
             }
             Ok(list.to_object(py))
         }
@@ -34,14 +64,33 @@ fn convert_value(t: &Value, py: Python, parse_datetime: &PyObject) -> PyResult<P
         Integer(v) => Ok(v.to_object(py)),
         Float(v) => Ok(v.to_object(py)),
         Boolean(v) => Ok(v.to_object(py)),
-        Datetime(v) => parse_datetime.call1(py, (v.to_string(),)),
+        // Datetime(v) => Ok(v.to_string().to_object(py)),
+        Datetime(v) => {
+            let dt = ChronoDatetime::parse_from_rfc3339(&v.to_string()).map_err(chrono_py_err)?;
+            let date = dt.date();
+            let time = dt.time();
+            let offset_seconds = dt.offset().local_minus_utc();
+            let tz_info = TzClass::new(offset_seconds);
+            let dt = PyDateTime::new(
+                py,
+                date.year(),
+                date.month() as u8,
+                date.day() as u8,
+                time.hour() as u8,
+                time.minute() as u8,
+                time.second() as u8,
+                time.nanosecond() * 1000 as u32,
+                Some(&tz_info),
+            )?;
+            Ok(dt.to_object(py))
+        }
     }
 }
 
 #[pyfunction]
-fn deserialize(py: Python, toml: String, parse_datetime: PyObject) -> PyResult<PyObject> {
+fn deserialize(py: Python, toml: String) -> PyResult<PyObject> {
     match toml.parse::<Value>() {
-        Ok(v) => convert_value(&v, py, &parse_datetime),
+        Ok(v) => convert_value(&v, py),
         Err(e) => Err(TomlParsingError::new_err(e.to_string())),
     }
 }
