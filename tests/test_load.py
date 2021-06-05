@@ -164,11 +164,12 @@ def test_invalid_type():
         rtoml.load(b'foobar')
 
 
-def test_datetime():
-    d = rtoml.load('date = 1979-05-27T07:32:00.999999-08:00')['date']
-    d = rtoml.load('date = 1979-05-27T07:32:00.999999Z')['date']
+def test_datetime_tz():
+    d: datetime = rtoml.load('date = 1979-05-27T07:32:00.999999-08:00')['date']
+    # d = rtoml.load('date = 1979-05-27T07:32:00.999999Z')['date']
     print(f'd: {d} ({d!r})')
-    # assert d == datetime(1979, 5, 27, 7, 32, 0, 999999, tzinfo=timezone(timedelta(seconds=28800)))
+    assert d == datetime(1979, 5, 27, 7, 32, 0, 999999, tzinfo=timezone(timedelta(seconds=-28800)))
+    print(d.tzinfo.tzname(datetime.now()))
     # assert d == datetime(1979, 5, 27, 7, 32, 0, 999999)
 
 
