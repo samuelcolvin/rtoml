@@ -164,6 +164,14 @@ def test_invalid_type():
         rtoml.load(b'foobar')
 
 
+def test_datetime():
+    d = rtoml.load('date = 1979-05-27T07:32:00.999999-08:00')['date']
+    d = rtoml.load('date = 1979-05-27T07:32:00.999999Z')['date']
+    print(f'd: {d} ({d!r})')
+    # assert d == datetime(1979, 5, 27, 7, 32, 0, 999999, tzinfo=timezone(timedelta(seconds=28800)))
+    # assert d == datetime(1979, 5, 27, 7, 32, 0, 999999)
+
+
 def test_invalid_toml():
     m = r'^invalid TOML value, did you mean to use a quoted string\? at line 1 column 5$'
     with pytest.raises(rtoml.TomlParsingError, match=m):

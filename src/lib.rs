@@ -15,7 +15,8 @@ create_exception!(_rtoml, TomlParsingError, PyValueError);
 create_exception!(_rtoml, TomlSerializationError, PyValueError);
 
 fn chrono_py_err(e: ParseError) -> PyErr {
-    PyErr::new::<PyValueError, _>(PyValueError::new_err(e.to_string()))
+    let s = format!("invalid toml date: {}", e.to_string());
+    PyErr::new::<PyValueError, _>(PyValueError::new_err(s))
 }
 
 #[pyclass(extends=PyTzInfo)]
@@ -66,11 +67,33 @@ fn convert_value(t: &Value, py: Python) -> PyResult<PyObject> {
         Boolean(v) => Ok(v.to_object(py)),
         // Datetime(v) => Ok(v.to_string().to_object(py)),
         Datetime(v) => {
-            let dt = ChronoDatetime::parse_from_rfc3339(&v.to_string()).map_err(chrono_py_err)?;
+            let mut date_string = v.to_string();
+            // println!("date_string: {:?}", date_string);
+            let date_ending = &date_string[date_string.len() - 3..];
+            let tz_naive = date_ending.chars().nth(0) != Some(':') && date_ending.chars().nth(2) != Some('Z');
+            if tz_naive{
+                date_string.push('Z');
+            }
+
+            let dt = ChronoDatetime::parse_from_rfc3339(&date_string).map_err(chrono_py_err)?;
             let date = dt.date();
             let time = dt.time();
             let offset_seconds = dt.offset().local_minus_utc();
             let tz_info = TzClass::new(offset_seconds);
+
+            // let tz_info: Option<&PyObject>;
+            // let tz_pyobject: PyObject;
+            // if tz_naive {
+            //     tz_info = None;
+            // } else {
+            //     let locals = PyDict::new(py);
+            //     locals.set_item("datetime", py.import("datetime")?)?;
+            //     locals.set_item("seconds", offset_seconds.to_object(py))?;
+            //     let code = "datetime.timezone(datetime.timedelta(seconds=seconds))";
+            //     tz_pyobject = py.eval(code, None, Some(&locals))?.into_py(py);
+            //     tz_info = Some(&tz_pyobject);
+            // }
+
             let dt = PyDateTime::new(
                 py,
                 date.year(),
@@ -79,8 +102,8 @@ fn convert_value(t: &Value, py: Python) -> PyResult<PyObject> {
                 time.hour() as u8,
                 time.minute() as u8,
                 time.second() as u8,
-                time.nanosecond() * 1000 as u32,
-                Some(&tz_info.into_py(py)),
+                time.nanosecond() / 1000 as u32,
+                Some(&Py::new(py, tz_info)?.to_object(py)),
             )?;
             Ok(dt.to_object(py))
         }

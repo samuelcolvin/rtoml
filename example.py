@@ -31,20 +31,18 @@ connection_max = 5000
 enabled = true
 """)
 
-from devtools import debug
-debug(loaded_obj)
-# assert loaded_obj == obj
-#
-# assert rtoml.dumps(obj) == """\
-# title = "TOML Example"
-#
-# [owner]
-# dob = 1979-05-27T07:32:00-08:00
-# name = "Tom Preston-Werner"
-#
-# [database]
-# connection_max = 5000
-# enabled = true
-# server = "192.168.1.1"
-# ports = [8001, 8001, 8002]
-# """
+assert loaded_obj == obj
+
+assert rtoml.dumps(obj) == """\
+title = "TOML Example"
+
+[owner]
+dob = 1979-05-27T07:32:00-08:00
+name = "Tom Preston-Werner"
+
+[database]
+connection_max = 5000
+enabled = true
+server = "192.168.1.1"
+ports = [8001, 8001, 8002]
+"""
