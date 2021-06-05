@@ -80,7 +80,7 @@ fn convert_value(t: &Value, py: Python) -> PyResult<PyObject> {
                 time.minute() as u8,
                 time.second() as u8,
                 time.nanosecond() * 1000 as u32,
-                Some(&tz_info),
+                Some(&tz_info.into_py(py)),
             )?;
             Ok(dt.to_object(py))
         }
