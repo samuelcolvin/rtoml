@@ -1,48 +1,22 @@
 extern crate pyo3;
 
-use chrono::{DateTime as ChronoDatetime, Datelike, ParseError, Timelike};
+#[macro_use]
+extern crate lazy_static;
+
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDateTime, PyDelta, PyDict, PyFloat, PyList, PyTuple, PyTzInfo};
+use pyo3::types::{PyAny, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
 use pyo3::{create_exception, wrap_pyfunction};
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::str::FromStr;
 use toml::Value::{Array, Boolean, Datetime, Float, Integer, String as TomlString, Table};
 use toml::{to_string as to_toml_string, to_string_pretty as to_toml_string_pretty, Value};
 
+mod datetime;
+
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 create_exception!(_rtoml, TomlParsingError, PyValueError);
 create_exception!(_rtoml, TomlSerializationError, PyValueError);
-
-fn chrono_py_err(e: ParseError) -> PyErr {
-    let s = format!("invalid toml date: {}", e.to_string());
-    PyErr::new::<PyValueError, _>(PyValueError::new_err(s))
-}
-
-#[pyclass(extends=PyTzInfo)]
-struct TzClass {
-    seconds: i32,
-}
-
-#[pymethods]
-impl TzClass {
-    #[new]
-    fn new(seconds: i32) -> Self {
-        TzClass { seconds }
-    }
-
-    fn utcoffset<'p>(&self, py: Python<'p>, _dt: &PyDateTime) -> PyResult<&'p PyDelta> {
-        PyDelta::new(py, 0, self.seconds, 0, true)
-    }
-
-    fn tzname(&self, _py: Python<'_>, _dt: &PyDateTime) -> String {
-        String::from("+01:00") // TODO
-    }
-
-    fn dst(&self, _py: Python<'_>, _dt: &PyDateTime) -> Option<&PyDelta> {
-        None
-    }
-}
 
 fn convert_value(t: &Value, py: Python) -> PyResult<PyObject> {
     match t {
@@ -66,47 +40,7 @@ fn convert_value(t: &Value, py: Python) -> PyResult<PyObject> {
         Float(v) => Ok(v.to_object(py)),
         Boolean(v) => Ok(v.to_object(py)),
         // Datetime(v) => Ok(v.to_string().to_object(py)),
-        Datetime(v) => {
-            let mut date_string = v.to_string();
-            // println!("date_string: {:?}", date_string);
-            let date_ending = &date_string[date_string.len() - 3..];
-            let tz_naive = date_ending.chars().nth(0) != Some(':') && date_ending.chars().nth(2) != Some('Z');
-            if tz_naive{
-                date_string.push('Z');
-            }
-
-            let dt = ChronoDatetime::parse_from_rfc3339(&date_string).map_err(chrono_py_err)?;
-            let date = dt.date();
-            let time = dt.time();
-            let offset_seconds = dt.offset().local_minus_utc();
-            let tz_info = TzClass::new(offset_seconds);
-
-            // let tz_info: Option<&PyObject>;
-            // let tz_pyobject: PyObject;
-            // if tz_naive {
-            //     tz_info = None;
-            // } else {
-            //     let locals = PyDict::new(py);
-            //     locals.set_item("datetime", py.import("datetime")?)?;
-            //     locals.set_item("seconds", offset_seconds.to_object(py))?;
-            //     let code = "datetime.timezone(datetime.timedelta(seconds=seconds))";
-            //     tz_pyobject = py.eval(code, None, Some(&locals))?.into_py(py);
-            //     tz_info = Some(&tz_pyobject);
-            // }
-
-            let dt = PyDateTime::new(
-                py,
-                date.year(),
-                date.month() as u8,
-                date.day() as u8,
-                time.hour() as u8,
-                time.minute() as u8,
-                time.second() as u8,
-                time.nanosecond() / 1000 as u32,
-                Some(&Py::new(py, tz_info)?.to_object(py)),
-            )?;
-            Ok(dt.to_object(py))
-        }
+        Datetime(v) => datetime::parse(py, v.to_string()),
     }
 }
 
