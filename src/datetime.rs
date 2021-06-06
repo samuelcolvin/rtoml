@@ -1,6 +1,5 @@
 extern crate pyo3;
 
-use chrono::{Datelike, NaiveDate};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDelta, PyTime, PyTzInfo};
@@ -31,6 +30,16 @@ lazy_static! {
     :
     (?P<tz_minute>\d{2})
 )?
+"
+    )
+    .unwrap();
+    static ref DATE_RE: Regex = Regex::new(
+        r"(?x)
+(?P<year>(?:1|2)\d{3})
+-
+(?P<month>0\d|1[0-2])
+-
+(?P<day>[0-2]\d|3[01])
 "
     )
     .unwrap();
@@ -96,9 +105,11 @@ pub fn parse(py: Python, date_string: String) -> PyResult<PyObject> {
             }
         };
     }
-
-    if let Ok(date) = NaiveDate::parse_from_str(&date_string, "%F") {
-        let py_date = PyDate::new(py, date.year(), date.month() as u8, date.day() as u8)?;
+    if let Some(cap) = DATE_RE.captures(&date_string) {
+        let year = cap["year"].parse::<i32>().unwrap();
+        let month = cap["month"].parse::<u8>().unwrap();
+        let day = cap["day"].parse::<u8>().unwrap();
+        let py_date = PyDate::new(py, year, month, day)?;
         return Ok(py_date.to_object(py));
     }
 

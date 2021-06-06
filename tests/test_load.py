@@ -185,6 +185,11 @@ def test_datetime_tz_utc():
     assert d.tzinfo.tzname(datetime.now()) == 'UTC'
 
 
+def test_datetime_invalid():
+    with pytest.raises(ValueError, match='day is out of range for month'):
+        rtoml.load('date = 1979-02-30T07:32:00+05:15')
+
+
 def test_invalid_toml():
     m = r'^invalid TOML value, did you mean to use a quoted string\? at line 1 column 5$'
     with pytest.raises(rtoml.TomlParsingError, match=m):
