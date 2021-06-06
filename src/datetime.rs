@@ -43,11 +43,10 @@ pub fn parse(py: Python, dt: &TomlDatetime) -> PyResult<PyObject> {
                 let py_tz: PyObject;
                 let tzinfo = match datetime.offset {
                     Some(offset) => {
-                        let offset_seconds: i32 = match offset {
-                            OffsetDup::Z => 0,
-                            OffsetDup::Custom { hours, minutes } => (hours as i32) * 3600 + (minutes as i32) * 60,
+                        let tz_info: TzClass = match offset {
+                            OffsetDup::Z => TzClass::new(0, 0),
+                            OffsetDup::Custom { hours, minutes } => TzClass::new(hours, minutes),
                         };
-                        let tz_info = TzClass::new(offset_seconds);
                         py_tz = Py::new(py, tz_info)?.to_object(py);
                         Some(&py_tz)
                     }
@@ -82,26 +81,30 @@ pub fn parse(py: Python, dt: &TomlDatetime) -> PyResult<PyObject> {
 
 #[pyclass(extends=PyTzInfo)]
 struct TzClass {
-    seconds: i32,
+    hours: i8,
+    minutes: u8,
 }
 
 #[pymethods]
 impl TzClass {
     #[new]
-    fn new(seconds: i32) -> Self {
-        TzClass { seconds }
+    fn new(hours: i8, minutes: u8) -> Self {
+        TzClass { hours, minutes }
+    }
+
+    fn seconds(&self) -> i32 {
+        (self.hours as i32) * 3600 + (self.minutes as i32) * 60
     }
 
     fn utcoffset<'p>(&self, py: Python<'p>, _dt: &PyDateTime) -> PyResult<&'p PyDelta> {
-        PyDelta::new(py, 0, self.seconds, 0, true)
+        PyDelta::new(py, 0, self.seconds(), 0, true)
     }
 
     fn tzname(&self, _py: Python<'_>, _dt: &PyDateTime) -> String {
-        if self.seconds == 0 {
+        if self.hours == 0 && self.minutes == 0 {
             "UTC".to_string()
         } else {
-            let minutes = self.seconds / 60;
-            format!("UTC{:+03}:{:02}", minutes / 60, minutes % 60)
+            format!("UTC{:+03}:{:02}", self.hours, self.minutes)
         }
     }
 
