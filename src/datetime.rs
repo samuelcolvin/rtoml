@@ -3,77 +3,49 @@ extern crate pyo3;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDelta, PyTime, PyTzInfo};
-use regex::Regex;
+use toml::value::Datetime as TomlDatetime;
 
-lazy_static! {
-    static ref DATETIME_RE: Regex = Regex::new(
-        r"(?x)
-(?:
-    (?P<year>\d{4})
-    -
-    (?P<month>\d{2})
-    -
-    (?P<day>\d{2})
-    (?:T| )
-)?
-(?P<hour>\d{2})
-:
-(?P<minute>\d{2})
-:
-(?P<second>\d{2})
-(?:\.(?P<microseconds>\d{1,6}))?
-(?P<tz>
-    Z
-    |
-    (?P<tz_sign>\+|\-)
-    (?P<tz_hour>\d{2})
-    :
-    (?P<tz_minute>\d{2})
-)?
-"
-    )
-    .unwrap();
-    static ref DATE_RE: Regex = Regex::new(
-        r"(?x)
-(?P<year>(?:1|2)\d{3})
--
-(?P<month>0\d|1[0-2])
--
-(?P<day>[0-2]\d|3[01])
-"
-    )
-    .unwrap();
+#[derive(Debug)]
+struct DatetimeDup {
+    pub date: Option<DateDup>,
+    pub time: Option<TimeDup>,
+    pub offset: Option<OffsetDup>,
 }
 
-pub fn parse(py: Python, date_string: String) -> PyResult<PyObject> {
-    if let Some(cap) = DATETIME_RE.captures(&date_string) {
-        let hour = cap["hour"].parse::<u8>().unwrap();
-        let minute = cap["minute"].parse::<u8>().unwrap();
-        let second = cap["second"].parse::<u8>().unwrap();
-        let microseconds: u32 = match cap.name("microseconds") {
-            // We pad the result with zeros so 1.123 is 123000 microseconds
-            Some(m) => format!("{:0<6}", m.as_str()).parse::<u32>().unwrap(),
-            None => 0,
-        };
+#[derive(Debug)]
+struct DateDup {
+    pub year: u16,
+    pub month: u8,
+    pub day: u8,
+}
 
-        return match cap.name("year") {
-            Some(y) => {
-                let year = y.as_str().parse::<i32>().unwrap();
+#[derive(Debug)]
+struct TimeDup {
+    pub hour: u8,
+    pub minute: u8,
+    pub second: u8,
+    pub nanosecond: u32,
+}
+
+#[allow(dead_code)]
+#[derive(Debug)]
+enum OffsetDup {
+    Z,
+    Custom { hours: i8, minutes: u8 },
+}
+
+pub fn parse(py: Python, dt: &TomlDatetime) -> PyResult<PyObject> {
+    let datetime: DatetimeDup = unsafe { std::mem::transmute(dt.clone()) };
+
+    let py_dt: PyObject = match datetime.date {
+        Some(date) => match datetime.time {
+            Some(t) => {
                 let py_tz: PyObject;
-                let tzinfo = match cap.name("tz") {
-                    Some(_) => {
-                        let offset_seconds: i32 = match cap.name("tz_hour") {
-                            Some(tz_hour) => {
-                                let tz_hour = tz_hour.as_str().parse::<i32>().unwrap();
-                                let tz_minute = cap["tz_minute"].parse::<i32>().unwrap();
-                                let s = tz_hour * 3600 + tz_minute * 60;
-                                if cap["tz_sign"] == *"-" {
-                                    -s
-                                } else {
-                                    s
-                                }
-                            }
-                            None => 0,
+                let tzinfo = match datetime.offset {
+                    Some(offset) => {
+                        let offset_seconds: i32 = match offset {
+                            OffsetDup::Z => 0,
+                            OffsetDup::Custom { hours, minutes } => (hours as i32) * 3600 + (minutes as i32) * 60,
                         };
                         let tz_info = TzClass::new(offset_seconds);
                         py_tz = Py::new(py, tz_info)?.to_object(py);
@@ -81,40 +53,31 @@ pub fn parse(py: Python, date_string: String) -> PyResult<PyObject> {
                     }
                     None => None,
                 };
-                let dt = PyDateTime::new(
-                    py,
-                    year,
-                    cap["month"].parse::<u8>().unwrap(),
-                    cap["day"].parse::<u8>().unwrap(),
-                    hour,
-                    minute,
-                    second,
-                    microseconds,
-                    tzinfo,
-                )?;
-                Ok(dt.to_object(py))
-            }
-            None => {
-                if cap.name("tz").is_some() {
-                    let msg = format!("tz not allowed with times \"{}\"", date_string);
-                    Err(PyErr::new::<PyValueError, _>(PyValueError::new_err(msg)))
-                } else {
-                    let py_time = PyTime::new(py, hour, minute, second, microseconds, None)?;
-                    Ok(py_time.to_object(py))
-                }
-            }
-        };
-    }
-    if let Some(cap) = DATE_RE.captures(&date_string) {
-        let year = cap["year"].parse::<i32>().unwrap();
-        let month = cap["month"].parse::<u8>().unwrap();
-        let day = cap["day"].parse::<u8>().unwrap();
-        let py_date = PyDate::new(py, year, month, day)?;
-        return Ok(py_date.to_object(py));
-    }
 
-    let msg = format!("invalid date/time format \"{}\"", date_string);
-    Err(PyErr::new::<PyValueError, _>(PyValueError::new_err(msg)))
+                PyDateTime::new(
+                    py,
+                    date.year as i32,
+                    date.month,
+                    date.day,
+                    t.hour,
+                    t.minute,
+                    t.second,
+                    t.nanosecond / 1000,
+                    tzinfo,
+                )?
+                .to_object(py)
+            }
+            None => PyDate::new(py, date.year as i32, date.month, date.day)?.to_object(py),
+        },
+        None => match datetime.time {
+            Some(t) => PyTime::new(py, t.hour, t.minute, t.second, t.nanosecond / 1000, None)?.to_object(py),
+            None => {
+                let msg = "either time or date (or both) are required)".to_string();
+                return Err(PyErr::new::<PyValueError, _>(PyValueError::new_err(msg)));
+            }
+        },
+    };
+    Ok(py_dt)
 }
 
 #[pyclass(extends=PyTzInfo)]

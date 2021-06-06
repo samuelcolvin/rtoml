@@ -1,8 +1,5 @@
 extern crate pyo3;
 
-#[macro_use]
-extern crate lazy_static;
-
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
@@ -39,7 +36,7 @@ fn convert_value(t: &Value, py: Python) -> PyResult<PyObject> {
         Integer(v) => Ok(v.to_object(py)),
         Float(v) => Ok(v.to_object(py)),
         Boolean(v) => Ok(v.to_object(py)),
-        Datetime(v) => datetime::parse(py, v.to_string()),
+        Datetime(v) => datetime::parse(py, v),
     }
 }
 
