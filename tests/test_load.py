@@ -179,6 +179,12 @@ def test_datetime_tz_pos():
     assert d.tzinfo.tzname(datetime.now()) == 'UTC+05:15'
 
 
+def test_datetime_tz_utc():
+    d: datetime = rtoml.load('date = 1979-05-27T07:32:00Z')['date']
+    assert d == datetime(1979, 5, 27, 7, 32, tzinfo=timezone.utc)
+    assert d.tzinfo.tzname(datetime.now()) == 'UTC'
+
+
 def test_invalid_toml():
     m = r'^invalid TOML value, did you mean to use a quoted string\? at line 1 column 5$'
     with pytest.raises(rtoml.TomlParsingError, match=m):

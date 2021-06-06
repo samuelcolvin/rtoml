@@ -39,7 +39,6 @@ fn convert_value(t: &Value, py: Python) -> PyResult<PyObject> {
         Integer(v) => Ok(v.to_object(py)),
         Float(v) => Ok(v.to_object(py)),
         Boolean(v) => Ok(v.to_object(py)),
-        // Datetime(v) => Ok(v.to_string().to_object(py)),
         Datetime(v) => datetime::parse(py, v.to_string()),
     }
 }
