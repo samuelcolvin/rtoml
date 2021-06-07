@@ -10,9 +10,13 @@ install:
 install-all: install
 	pip install -r tests/requirements-linting.txt
 
-.PHONY: build
-build:
+.PHONY: build-dev
+build-dev:
 	python ./setup.py develop
+
+.PHONY: build-prod
+build-prod:
+	python ./setup.py install
 
 .PHONY: format
 format:

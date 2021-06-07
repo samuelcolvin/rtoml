@@ -39,7 +39,7 @@ jobs:
       run: make install
 
     - name: build
-      run: make build
+      run: make build-dev
 
     - name: test
       run: |
