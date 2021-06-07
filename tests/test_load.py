@@ -11,6 +11,9 @@ import rtoml
         ('foo = "bar"', {'foo': 'bar'}),
         ('ports = [ 8001, 8001, 8002 ]', {'ports': [8001, 8001, 8002]}),
         ('x = 1979-05-27T07:32:00', {'x': datetime(1979, 5, 27, 7, 32)}),
+        ('x = 1979-05-27T07:32:00.123', {'x': datetime(1979, 5, 27, 7, 32, 0, 123000)}),
+        ('x = 1979-05-27T07:32:00.123000', {'x': datetime(1979, 5, 27, 7, 32, 0, 123000)}),
+        ('x = 1979-05-27T07:32:00.000123', {'x': datetime(1979, 5, 27, 7, 32, 0, 123)}),
         ('x = 1979-05-27T07:32:00Z', {'x': datetime(1979, 5, 27, 7, 32, tzinfo=timezone.utc)}),
         ('x = 1979-05-27T07:32:00-08:00', {'x': datetime(1979, 5, 27, 7, 32, tzinfo=timezone(timedelta(hours=-8)))}),
         ('x = 1979-05-27T07:32:00+08:00', {'x': datetime(1979, 5, 27, 7, 32, tzinfo=timezone(timedelta(hours=8)))}),
@@ -162,6 +165,29 @@ def test_load_file(tmp_path):
 def test_invalid_type():
     with pytest.raises(TypeError, match="invalid toml input, must be str not <class 'bytes'>"):
         rtoml.load(b'foobar')
+
+
+def test_datetime_tz_neg():
+    d: datetime = rtoml.load('date = 1979-05-27T07:32:00.999999-08:00')['date']
+    assert d == datetime(1979, 5, 27, 7, 32, 0, 999999, tzinfo=timezone(timedelta(seconds=-28800)))
+    assert d.tzinfo.tzname(datetime.now()) == 'UTC-08:00'
+
+
+def test_datetime_tz_pos():
+    d: datetime = rtoml.load('date = 1979-05-27T07:32:00+05:15')['date']
+    assert d == datetime(1979, 5, 27, 7, 32, tzinfo=timezone(timedelta(seconds=18900)))
+    assert d.tzinfo.tzname(datetime.now()) == 'UTC+05:15'
+
+
+def test_datetime_tz_utc():
+    d: datetime = rtoml.load('date = 1979-05-27T07:32:00Z')['date']
+    assert d == datetime(1979, 5, 27, 7, 32, tzinfo=timezone.utc)
+    assert d.tzinfo.tzname(datetime.now()) == 'UTC'
+
+
+def test_datetime_invalid():
+    with pytest.raises(rtoml.TomlParsingError, match='day is out of range for month'):
+        rtoml.load('date = 1979-02-30T07:32:00')
 
 
 def test_invalid_toml():

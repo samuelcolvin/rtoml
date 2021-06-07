@@ -41,13 +41,15 @@ def test_matching_output():
 if __name__ == '__main__':
     steps = 100
 
+    timeit.timeit(rtoml_load, number=steps)
     rtoml_time = timeit.timeit(rtoml_load, number=steps)
     print(f'rtoml     version: {rtoml.VERSION:8} {rtoml_time / steps * 1000:0.3f} ms/parse')
 
+    timeit.timeit(pytomlpp_load, number=steps)
     pytomlpp_time = timeit.timeit(pytomlpp_load, number=steps)
     print(
         f'pytomlpp  version: {pytomlpp.lib_version:8} {pytomlpp_time / steps * 1000:0.3f} ms/parse '
-        f'({rtoml_time / pytomlpp_time:0.2f} X faster)'
+        f'({pytomlpp_time / rtoml_time:0.2f} X slower)'
     )
 
     tomli_time = timeit.timeit(tomli_load, number=steps)
