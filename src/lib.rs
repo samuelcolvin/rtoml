@@ -3,7 +3,7 @@ extern crate pyo3;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
-use pyo3::{create_exception, wrap_pyfunction};
+use pyo3::{create_exception, wrap_pyfunction, PyErrArguments};
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::str::FromStr;
 use toml::Value::{Array, Boolean, Datetime, Float, Integer, String as TomlString, Table};
@@ -43,7 +43,7 @@ fn convert_value(t: &Value, py: Python) -> PyResult<PyObject> {
 #[pyfunction]
 fn deserialize(py: Python, toml: String) -> PyResult<PyObject> {
     match toml.parse::<Value>() {
-        Ok(v) => convert_value(&v, py),
+        Ok(v) => convert_value(&v, py).map_err(|e| TomlParsingError::new_err(e.arguments(py))),
         Err(e) => Err(TomlParsingError::new_err(e.to_string())),
     }
 }

@@ -71,6 +71,7 @@ pub fn parse(py: Python, dt: &TomlDatetime) -> PyResult<PyObject> {
         None => match datetime.time {
             Some(t) => PyTime::new(py, t.hour, t.minute, t.second, t.nanosecond / 1000, None)?.to_object(py),
             None => {
+                // AFAIK this can't actually happen
                 let msg = "either time or date (or both) are required)".to_string();
                 return Err(PyErr::new::<PyValueError, _>(PyValueError::new_err(msg)));
             }
