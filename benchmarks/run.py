@@ -19,11 +19,14 @@ def rtoml_load():
 def uiri_toml_load():
     return uiri_toml.loads(toml_str)
 
+
 def tomli_load():
     return tomli.loads(toml_str)
 
+
 def pytomlpp_load():
     return pytomlpp.loads(toml_str)
+
 
 def tomlkit_load():
     return tomlkit.parse(toml_str)

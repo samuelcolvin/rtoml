@@ -2,6 +2,7 @@ extern crate pyo3;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+use pyo3::types::IntoPyDict;
 use pyo3::types::{PyAny, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
 use pyo3::{create_exception, wrap_pyfunction, PyErrArguments};
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
@@ -18,13 +19,12 @@ create_exception!(_rtoml, TomlSerializationError, PyValueError);
 fn convert_value(t: &Value, py: Python) -> PyResult<PyObject> {
     match t {
         Table(table) => {
-            let d = PyDict::new(py);
+            let mut d: Vec<(String, PyObject)> = Vec::with_capacity(table.len());
             for (key, value) in table.iter() {
-                d.set_item(key.to_string(), convert_value(value, py)?)?;
+                d.push((key.to_string(), convert_value(value, py)?))
             }
-            Ok(d.to_object(py))
+            Ok(d.into_py_dict(py).to_object(py))
         }
-
         Array(array) => {
             let mut list: Vec<PyObject> = Vec::with_capacity(array.len());
             for value in array {
