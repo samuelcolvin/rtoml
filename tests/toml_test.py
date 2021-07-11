@@ -17,14 +17,7 @@ def simplify(value):
     if isinstance(value, dict):
         return {k: simplify(v) for k, v in value.items()}
     elif isinstance(value, list):
-        a = [simplify(v) for v in value]
-        try:
-            a[0]['value']
-        except KeyError:
-            return a
-        except IndexError:
-            pass
-        return {'type': 'array', 'value': a}
+        return [simplify(v) for v in value]
     elif isinstance(value, str):
         return {'type': 'string', 'value': value}
     elif isinstance(value, bool):
@@ -45,4 +38,4 @@ def simplify(value):
 if __name__ == '__main__':
     data = rtoml.loads(sys.stdin.read())
     result = simplify(data)
-    print(json.dumps(result))
+    print(json.dumps(result, indent=2))
