@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 toml = {version = "0.5.8", features = ["preserve_order"]}
 serde = "1.0.126"
-pyo3 = {version = "0.13.2", features = ["extension-module"]}
+pyo3 = {version = "0.14.1", features = ["extension-module"]}
 
 [lib]
 name = "_rtoml"
