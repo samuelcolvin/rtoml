@@ -45,4 +45,4 @@ def simplify(value):
 if __name__ == '__main__':
     data = rtoml.loads(sys.stdin.read())
     result = simplify(data)
-    print(json.dumps(result))
+    print(json.dumps(result, indent=2))
