@@ -16,3 +16,4 @@ __pycache__/
 /rtoml/*.so
 .coverage
 .auto-format
+/toml-test/
