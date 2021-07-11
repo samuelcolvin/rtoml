@@ -149,10 +149,18 @@ def test_load_str():
     assert rtoml.load('foo = "bar"') == {'foo': 'bar'}
 
 
-def test_load_path(tmp_path):
+@pytest.mark.parametrize(
+    'input_toml,output_obj',
+    [
+        ('foo = "bar"', {'foo': 'bar'}),
+        ('emoji = "😷"', {'emoji': '😷'}),
+        ('polish = "Witaj świecie"', {'polish': 'Witaj świecie'}),
+    ],
+)
+def test_load_path(tmp_path, input_toml, output_obj):
     p = tmp_path / 'test.toml'
-    p.write_text('foo = "bar"')
-    assert rtoml.load(p) == {'foo': 'bar'}
+    p.write_text(input_toml, encoding='UTF-8')
+    assert rtoml.load(p) == output_obj
 
 
 def test_load_file(tmp_path):

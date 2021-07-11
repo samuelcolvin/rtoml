@@ -18,7 +18,7 @@ def load(toml: Union[str, Path, TextIO]) -> Dict[str, Any]:
     `Path` or file object from `open()`.
     """
     if isinstance(toml, Path):
-        toml = toml.read_text()
+        toml = toml.read_text(encoding='UTF-8')
     elif isinstance(toml, (TextIOBase, TextIO)):
         toml = toml.read()
 
@@ -56,6 +56,6 @@ def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False) -> int:
     """
     s = dumps(obj, pretty=pretty)
     if isinstance(file, Path):
-        return file.write_text(s)
+        return file.write_text(s, encoding='UTF-8')
     else:
         return file.write(s)
