@@ -159,7 +159,7 @@ def test_load_str():
 )
 def test_load_path(tmp_path, input_toml, output_obj):
     p = tmp_path / 'test.toml'
-    p.write_text(input_toml)
+    p.write_text(input_toml, encoding='UTF-8')
     assert rtoml.load(p) == output_obj
 
 

@@ -49,7 +49,7 @@ def test_dumps_pretty(input_obj, output_toml):
 def test_dump_path(tmp_path, input_obj, output_toml, size):
     p = tmp_path / 'test.toml'
     assert rtoml.dump(input_obj, p) == size
-    assert p.read_text() == output_toml
+    assert p.read_text(encoding='UTF-8') == output_toml
 
 
 def test_dump_file(tmp_path):
