@@ -17,6 +17,8 @@ import rtoml
         # order changed to avoid https://github.com/alexcrichton/toml-rs/issues/142
         ({'x': {'a': 1}, 'y': 4}, 'y = 4\n\n[x]\na = 1\n'),
         ((1, 2, 3), '[1, 2, 3]'),
+        ({'emoji': '😷'}, 'emoji = "😷"\n'),
+        ({'polish': 'Witaj świecie'}, 'polish = "Witaj świecie"\n'),
     ],
 )
 def test_dumps(input_obj, output_toml):
@@ -36,10 +38,18 @@ def test_dumps_pretty(input_obj, output_toml):
     assert rtoml.dumps(input_obj, pretty=True) == output_toml
 
 
-def test_dump_path(tmp_path):
+@pytest.mark.parametrize(
+    'input_obj,output_toml,size',
+    [
+        ({'foo': 'bar'}, 'foo = "bar"\n', 12),
+        ({'emoji': '😷'}, 'emoji = "😷"\n', 12),
+        ({'polish': 'Witaj świecie'}, 'polish = "Witaj świecie"\n', 25),
+    ],
+)
+def test_dump_path(tmp_path, input_obj, output_toml, size):
     p = tmp_path / 'test.toml'
-    assert rtoml.dump({'foo': 'bar'}, p) == 12
-    assert p.read_text() == 'foo = "bar"\n'
+    assert rtoml.dump(input_obj, p) == size
+    assert p.read_text() == output_toml
 
 
 def test_dump_file(tmp_path):
