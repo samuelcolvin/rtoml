@@ -3,49 +3,18 @@ extern crate pyo3;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDelta, PyTime, PyTzInfo};
-use toml::value::Datetime as TomlDatetime;
+use toml::value::{Datetime as TomlDatetime, Offset as TomlOffset};
 
-#[derive(Debug)]
-struct DatetimeDup {
-    pub date: Option<DateDup>,
-    pub time: Option<TimeDup>,
-    pub offset: Option<OffsetDup>,
-}
-
-#[derive(Debug)]
-struct DateDup {
-    pub year: u16,
-    pub month: u8,
-    pub day: u8,
-}
-
-#[derive(Debug)]
-struct TimeDup {
-    pub hour: u8,
-    pub minute: u8,
-    pub second: u8,
-    pub nanosecond: u32,
-}
-
-#[allow(dead_code)]
-#[derive(Debug)]
-enum OffsetDup {
-    Z,
-    Custom { hours: i8, minutes: u8 },
-}
-
-pub fn parse(py: Python, dt: &TomlDatetime) -> PyResult<PyObject> {
-    let datetime: DatetimeDup = unsafe { std::mem::transmute(dt.clone()) };
-
-    let py_dt: PyObject = match datetime.date {
-        Some(date) => match datetime.time {
+pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<PyObject> {
+    let py_dt: PyObject = match &datetime.date {
+        Some(date) => match &datetime.time {
             Some(t) => {
                 let py_tz: PyObject;
-                let tzinfo = match datetime.offset {
+                let tzinfo = match &datetime.offset {
                     Some(offset) => {
                         let tz_info: TzClass = match offset {
-                            OffsetDup::Z => TzClass::new(0, 0),
-                            OffsetDup::Custom { hours, minutes } => TzClass::new(hours, minutes),
+                            TomlOffset::Z => TzClass::new(0, 0),
+                            TomlOffset::Custom { hours, minutes } => TzClass::new(*hours, *minutes),
                         };
                         py_tz = Py::new(py, tz_info)?.to_object(py);
                         Some(&py_tz)
@@ -68,7 +37,7 @@ pub fn parse(py: Python, dt: &TomlDatetime) -> PyResult<PyObject> {
             }
             None => PyDate::new(py, date.year as i32, date.month, date.day)?.to_object(py),
         },
-        None => match datetime.time {
+        None => match &datetime.time {
             Some(t) => PyTime::new(py, t.hour, t.minute, t.second, t.nanosecond / 1000, None)?.to_object(py),
             None => {
                 // AFAIK this can't actually happen
