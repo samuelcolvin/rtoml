@@ -140,6 +140,11 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 cast!(|x: $type| {
                     let mut seq = serializer.serialize_seq(Some(x.len()))?;
                     for element in x {
+                        if element.is_none() {
+                            // None values must be omitted
+                            continue
+                        }
+
                         seq.serialize_element(&SerializePyObject {
                             py: self.py,
                             obj: element,
