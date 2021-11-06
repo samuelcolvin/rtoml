@@ -61,3 +61,6 @@ def test_dump_file(tmp_path):
 
 def test_varied_list():
     assert rtoml.dumps({'test': [1, '2']}) == 'test = [1, "2"]\n'
+
+def test_none_map_value():
+    assert rtoml.dumps({'key': None}) == ''
