@@ -62,6 +62,7 @@ def test_dump_file(tmp_path):
 def test_varied_list():
     assert rtoml.dumps({'test': [1, '2']}) == 'test = [1, "2"]\n'
 
+
 @pytest.mark.parametrize(
     'input_obj,output_toml',
     [
@@ -71,5 +72,5 @@ def test_varied_list():
         ({'key1': None, 'foo': 'bar', 'key2': None}, 'foo = "bar"\n'),
     ],
 )
-def test_none_map_value(input_obj,output_toml):
+def test_none_map_value(input_obj, output_toml):
     assert rtoml.dumps(input_obj) == output_toml

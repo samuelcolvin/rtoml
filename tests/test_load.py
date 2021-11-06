@@ -223,5 +223,6 @@ smooth = true
 """
     assert rtoml.loads(s) == ...
 
+
 def test_empty_toml():
     assert rtoml.loads('') == {}
