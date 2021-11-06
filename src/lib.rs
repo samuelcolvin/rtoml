@@ -83,23 +83,28 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
 
         macro_rules! add_to_map {
             ($map:ident, $key:ident, $value:ident) => {
-                if $key.is_none() {
-                    $map.serialize_key("null")?;
-                } else if let Ok(key) = $key.extract::<bool>() {
-                    $map.serialize_key(if key { "true" } else { "false" })?;
-                } else if let Ok(key) = $key.str() {
-                    let key = key.to_string();
-                    $map.serialize_key(&key)?;
+                if $value.is_none() {
+                    // in case of none we don't need to serialize anything
+                    // we just ingore this field.
                 } else {
-                    return Err(ser::Error::custom(format_args!(
-                        "Dictionary key is not a string: {:?}",
-                        $key
-                    )));
+                    if $key.is_none() {
+                        $map.serialize_key("null")?;
+                    } else if let Ok(key) = $key.extract::<bool>() {
+                        $map.serialize_key(if key { "true" } else { "false" })?;
+                    } else if let Ok(key) = $key.str() {
+                        let key = key.to_string();
+                        $map.serialize_key(&key)?;
+                    } else {
+                        return Err(ser::Error::custom(format_args!(
+                            "Dictionary key is not a string: {:?}",
+                            $key
+                        )));
+                    }
+                    $map.serialize_value(&SerializePyObject {
+                        py: self.py,
+                        obj: $value,
+                    })?;
                 }
-                $map.serialize_value(&SerializePyObject {
-                    py: self.py,
-                    obj: $value,
-                })?;
             };
         }
 
