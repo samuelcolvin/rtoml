@@ -74,3 +74,35 @@ def test_varied_list():
 )
 def test_none_map_value(input_obj, output_toml):
     assert rtoml.dumps(input_obj) == output_toml
+
+@pytest.mark.parametrize(
+    'input_obj,output_toml',
+    [
+        ([None], '[]'),
+        (["a", None], '["a"]'),
+        ([None, "b"], '["b"]'),
+        (["a", None, "b"], '["a", "b"]'),
+        ({'foo': 'bar', 'list': [None]}, 'foo = "bar"\nlist = []\n'),
+        ({'foo': 'bar', 'list': [None, "b"]}, 'foo = "bar"\nlist = ["b"]\n'),
+        ({'foo': 'bar', 'list': ["a", None]}, 'foo = "bar"\nlist = ["a"]\n'),
+        ({'foo': 'bar', 'list': ["a", None, "b"]}, 'foo = "bar"\nlist = ["a", "b"]\n'),
+    ],
+)
+def test_none_values_inside_list(input_obj, output_toml):
+    assert rtoml.dumps(input_obj) == output_toml
+
+@pytest.mark.parametrize(
+    'input_obj,output_toml',
+    [
+        ((None), '"null"'),
+        (("a", None), '["a"]'),
+        ((None, "b"), '["b"]'),
+        (("a", None, "b"), '["a", "b"]'),
+        ({'foo': 'bar', 'list': (None)}, 'foo = "bar"\n'),
+        ({'foo': 'bar', 'list': (None, "b")}, 'foo = "bar"\nlist = ["b"]\n'),
+        ({'foo': 'bar', 'list': ("a", None)}, 'foo = "bar"\nlist = ["a"]\n'),
+        ({'foo': 'bar', 'list': ("a", None, "b")}, 'foo = "bar"\nlist = ["a", "b"]\n'),
+    ],
+)
+def test_none_values_inside_tuple(input_obj, output_toml):
+    assert rtoml.dumps(input_obj) == output_toml
