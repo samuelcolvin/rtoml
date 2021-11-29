@@ -112,6 +112,7 @@ jobs:
         - '7'
         - '8'
         - '9'
+        - '10'
         include:
         - os: ubuntu
           platform: linux
