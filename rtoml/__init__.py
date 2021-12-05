@@ -34,7 +34,7 @@ def loads(toml: str) -> Dict[str, Any]:
     return _rtoml.deserialize(toml)
 
 
-def dumps(obj: Any, *, pretty: bool = False) -> str:
+def dumps(obj: Any, *, pretty: bool = False, omitNone: bool = False) -> str:
     """
     Serialize a python object to TOML.
 
@@ -45,7 +45,7 @@ def dumps(obj: Any, *, pretty: bool = False) -> str:
     else:
         serialize = _rtoml.serialize
 
-    return serialize(obj)
+    return serialize(obj, omitNone);
 
 
 def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False) -> int:

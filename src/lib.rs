@@ -2,7 +2,7 @@ extern crate pyo3;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
+use pyo3::types::{PyAny, PyDateTime, PyDict, PyFloat, PyList, PyTuple, PyBool};
 use pyo3::{create_exception, wrap_pyfunction, PyErrArguments};
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::str::FromStr;
@@ -49,12 +49,26 @@ fn deserialize(py: Python, toml: String) -> PyResult<PyObject> {
 }
 
 // taken from https://github.com/mre/hyperjson/blob/10d31608584ef4499d6b6b10b6dc9455b358fe3d/src/lib.rs#L287-L402
-struct SerializePyObject<'p, 'a> {
+struct SerializePyObject<'p> {
     py: Python<'p>,
-    obj: &'a PyAny,
+    obj: &'p PyAny,
+    omit_none: bool,
 }
 
-impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
+impl<'p> SerializePyObject<'p> {
+    fn new(py: Python<'p>, obj: &'p PyObject, omit_none: &PyObject) -> PyResult<Self> {
+        let omit_none = omit_none.extract::<&PyBool>(py)?.is_true();
+        let obj = obj.extract(py)?;
+
+        Ok(Self {
+            py,
+            omit_none,
+            obj,
+        })
+    }
+}
+
+impl<'p> Serialize for SerializePyObject<'p> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -103,6 +117,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                     $map.serialize_value(&SerializePyObject {
                         py: self.py,
                         obj: $value,
+                        omit_none: self.omit_none,
                     })?;
                 }
             };
@@ -148,6 +163,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                         seq.serialize_element(&SerializePyObject {
                             py: self.py,
                             obj: element,
+                            omit_none: self.omit_none,
                         })?
                     }
                     return seq.end();
@@ -193,24 +209,18 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
 }
 
 #[pyfunction]
-fn serialize(py: Python, obj: PyObject) -> PyResult<String> {
-    let s = SerializePyObject {
-        py,
-        obj: obj.extract(py)?,
-    };
-    match to_toml_string(&s) {
+fn serialize(py: Python, obj: PyObject, omit_none: PyObject) -> PyResult<String> {
+    let serializer = SerializePyObject::new(py, &obj, &omit_none)?;
+    match to_toml_string(&serializer) {
         Ok(s) => Ok(s),
         Err(e) => Err(TomlSerializationError::new_err(e.to_string())),
     }
 }
 
 #[pyfunction]
-fn serialize_pretty(py: Python, obj: PyObject) -> PyResult<String> {
-    let s = SerializePyObject {
-        py,
-        obj: obj.extract(py)?,
-    };
-    match to_toml_string_pretty(&s) {
+fn serialize_pretty(py: Python, obj: PyObject, omit_none: PyObject) -> PyResult<String> {
+    let serializer = SerializePyObject::new(py, &obj, &omit_none)?;
+    match to_toml_string_pretty(&serializer) {
         Ok(s) => Ok(s),
         Err(e) => Err(TomlSerializationError::new_err(e.to_string())),
     }
