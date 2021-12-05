@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9']
+        python-version: ['3.7', '3.8', '3.9', '3.10']
 
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -112,6 +112,7 @@ jobs:
         - '7'
         - '8'
         - '9'
+        - '10'
         include:
         - os: ubuntu
           platform: linux
@@ -148,7 +149,7 @@ jobs:
       run: cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
-        CIBW_SKIP: '*-win32'
+        CIBW_SKIP: '*-win32 *-musllinux_i686'
         CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
         CIBW_TEST_REQUIRES: 'pytest'
         CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
