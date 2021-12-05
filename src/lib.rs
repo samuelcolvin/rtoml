@@ -97,7 +97,7 @@ impl<'p> Serialize for SerializePyObject<'p> {
 
         macro_rules! add_to_map {
             ($map:ident, $key:ident, $value:ident) => {
-                if $value.is_none() {
+                if self.omit_none && $value.is_none() {
                     // in case of none we don't need to serialize anything
                     // we just ingore this field.
                 } else {
@@ -155,7 +155,7 @@ impl<'p> Serialize for SerializePyObject<'p> {
                 cast!(|x: $type| {
                     let mut seq = serializer.serialize_seq(Some(x.len()))?;
                     for element in x {
-                        if element.is_none() {
+                        if self.omit_none && element.is_none() {
                             // None values must be omitted
                             continue
                         }
