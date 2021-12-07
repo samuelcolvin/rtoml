@@ -158,6 +158,7 @@ jobs:
         CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
         CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
         CIBW_ARCHS_MACOS: 'x86_64 arm64'
+        CIBW_TEST_SKIP: '*-macosx_arm64'  # see https://cibuildwheel.readthedocs.io/en/stable/faq/#universal2
         CIBW_BEFORE_BUILD: >
           pip install -U setuptools-rust &&
           rustup default nightly &&
