@@ -34,7 +34,7 @@ def loads(toml: str) -> Dict[str, Any]:
     return _rtoml.deserialize(toml)
 
 
-def dumps(obj: Any, *, pretty: bool = False, omit_none: bool = False) -> str:
+def dumps(obj: Any, *, pretty: bool = False, include_none: bool = True) -> str:
     """
     Serialize a python object to TOML.
 
@@ -45,16 +45,16 @@ def dumps(obj: Any, *, pretty: bool = False, omit_none: bool = False) -> str:
     else:
         serialize = _rtoml.serialize
 
-    return serialize(obj, omit_none);
+    return serialize(obj, include_none);
 
 
-def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False) -> int:
+def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False, include_none: bool = True) -> int:
     """
     Serialize a python object to TOML and write it to a file. `file` may be a `Path` or file object from `open()`.
 
     If `pretty` is true, output has a more "pretty" format.
     """
-    s = dumps(obj, pretty=pretty)
+    s = dumps(obj, pretty=pretty, include_none=include_none)
     if isinstance(file, Path):
         return file.write_text(s, encoding='UTF-8')
     else:
