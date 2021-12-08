@@ -47,21 +47,25 @@ Parse a TOML string and return a python dictionary. (provided to match the inter
 
 #### dumps
 ```python
-def dumps(obj: Any, *, pretty: bool = False) -> str: ...
+def dumps(obj: Any, *, pretty: bool = False, include_none = True) -> str: ...
 ```
 
 Serialize a python object to TOML.
 
 If `pretty` is true, output has a more "pretty" format.
 
+If `include_none` is false, none objectes are ommited (in dictionaries, tuples and lists as well).
+
 #### dump
 ```python
-def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False) -> int: ...
+def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False, include_none = True) -> int: ...
 ```
 
 Serialize a python object to TOML and write it to a file. `file` may be a `Path` or file object from `open()`.
 
 If `pretty` is true, output has a more "pretty" format.
+
+If `include_none` is false, none objectes are ommited (in dictionaries, tuples and lists as well).
 
 ### Example
 
