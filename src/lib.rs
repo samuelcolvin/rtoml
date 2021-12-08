@@ -93,10 +93,8 @@ impl<'p> Serialize for SerializePyObject<'p> {
 
         macro_rules! add_to_map {
             ($map:ident, $key:ident, $value:ident) => {
-                if !self.include_none && ($value.is_none() || $key.is_none()) {
-                    // in case of none we don't need to serialize anything
-                    // we just ingore this field.
-                } else {
+                let ignore_none_entry = !self.include_none && ($value.is_none() || $key.is_none());
+                if !ignore_none_entry {
                     if $key.is_none() {
                         $map.serialize_key("null")?;
                     } else if let Ok(key) = $key.extract::<bool>() {
@@ -110,6 +108,7 @@ impl<'p> Serialize for SerializePyObject<'p> {
                             $key
                         )));
                     }
+
                     $map.serialize_value(&SerializePyObject {
                         py: self.py,
                         obj: $value,
