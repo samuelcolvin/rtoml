@@ -27,7 +27,7 @@ combine_as_imports = true
 skip = "tests/toml_test.py"
 
 [tool.mypy]
-follow_imports = ["normal"]
+follow_imports = "normal"
 strict_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
