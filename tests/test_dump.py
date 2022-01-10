@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timezone
 
 import pytest
 
@@ -12,6 +12,8 @@ import rtoml
         ({'foo': 'bar'}, 'foo = "bar"\n'),
         ([1, 2, 3], '[1, 2, 3]'),
         (datetime(1979, 5, 27, 7, 32), '1979-05-27T07:32:00'),
+        (date(2022, 12, 31), '2022-12-31'),
+        (time(12, 00, 59, 23456), '12:00:59.023456'),
         (datetime(1979, 5, 27, 7, 32, tzinfo=timezone.utc), '1979-05-27T07:32:00Z'),
         ({'x': datetime(1979, 5, 27, 7, 32)}, 'x = 1979-05-27T07:32:00\n'),
         # order changed to avoid https://github.com/alexcrichton/toml-rs/issues/142

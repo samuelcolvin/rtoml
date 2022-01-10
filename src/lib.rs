@@ -2,7 +2,7 @@ extern crate pyo3;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
+use pyo3::types::{PyAny, PyDate, PyDateTime, PyDict, PyFloat, PyList, PyTime, PyTuple};
 use pyo3::{create_exception, wrap_pyfunction, PyErrArguments};
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::str::FromStr;
@@ -65,6 +65,13 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                     return $f(val);
                 }
             };
+            ($($t:ty),*; |$v:ident| $e: block) => {
+                $(
+                    if let Ok(val) = PyTryFrom::try_from(self.obj) {
+                        return (|$v: &$t| $e)(val);
+                    };
+                )*
+            }
         }
 
         macro_rules! extract {
@@ -148,13 +155,13 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
         to_seq!(&PyList);
         to_seq!(&PyTuple);
 
-        cast!(|x: &PyDateTime| {
+        cast!(PyTime, PyDate, PyDateTime; |x| {
             let dt_str: &str = x.str().map_err(debug_py_err)?.extract().map_err(debug_py_err)?;
             let iso_str = dt_str.replacen("+00:00", "Z", 1);
             match toml::value::Datetime::from_str(&iso_str) {
                 Ok(dt) => dt.serialize(serializer),
                 Err(e) => Err(ser::Error::custom(format_args!(
-                    "unable to convert datetime string to toml datetime object {:?}",
+                    "unable to convert datetime string to TOML datetime object {:?}",
                     e
                 ))),
             }
