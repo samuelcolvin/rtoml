@@ -4,8 +4,8 @@ black = black -S -l 120 --target-version py38 rtoml tests
 flake8 = flake8 --max-line-length=120 --max-complexity=14 --inline-quotes="'" --multiline-quotes='"""' --ignore=E203,W503 rtoml/ tests/
 
 install:
-	pip install -U pip wheel setuptools
-	pip install -U -r tests/requirements.txt
+	pip install -U pip wheel setuptools setuptools-rust
+	pip install -r tests/requirements.txt
 
 .PHONY: install-all
 install-all: install

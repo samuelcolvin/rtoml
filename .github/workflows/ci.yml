@@ -36,10 +36,10 @@ jobs:
         override: true
 
     - name: install python dependencies
-      run: make install
+      run: pip install -r tests/requirements.txt
 
     - name: build
-      run: make build-dev
+      run: pip install -e .
 
     - name: test
       run: |
