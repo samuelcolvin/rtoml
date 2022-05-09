@@ -148,6 +148,9 @@ jobs:
     - run: rustup toolchain install stable-i686-pc-windows-msvc
       if: matrix.os == 'windows'
 
+    - run: rustup target add i686-pc-windows-msvc
+      if: matrix.os == 'windows'
+
     - name: install python dependencies
       run: pip install -U setuptools wheel twine cibuildwheel
 
