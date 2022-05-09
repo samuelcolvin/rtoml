@@ -97,36 +97,42 @@ jobs:
     - run: make mypy
 
   build:
-    name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs:
-      - test
-      - lint
+    name: >
+      build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
+      (${{ matrix.alt_arch_name || matrix.arch }})
+#    needs: [test, lint]
     strategy:
       fail-fast: false
       matrix:
-        os:
-        - ubuntu
-        - macos
-        - windows
-        python-version:
-        - '7'
-        - '8'
-        - '9'
-        - '10'
+        os: [ubuntu, macos, windows]
+        python-version: ['7', '8', '9', '10']
+        arch: [main, alt]
         include:
-        - os: ubuntu
-          platform: linux
-        - os: windows
-          ls: dir
+          - os: ubuntu
+            platform: linux
+          - os: windows
+            ls: dir
+          - os: ubuntu
+            arch: alt
+            alt_arch_name: aarch64
+          - os: macos
+            arch: alt
+            alt_arch_name: arm64
+        exclude:
+          - os: windows
+            arch: alt
+          - os: macos
+            python-version: '7'
+            arch: alt
 
     runs-on: ${{ format('{0}-latest', matrix.os) }}
     steps:
     - uses: actions/checkout@v2
 
     - name: set up python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v3
       with:
-        python-version: '3.8'
+        python-version: '3.9'
 
     - name: set up rust
       if: matrix.os != 'ubuntu'
@@ -135,6 +141,12 @@ jobs:
         profile: minimal
         toolchain: nightly
         override: true
+
+    - run: rustup target add aarch64-apple-darwin
+      if: matrix.os == 'macos'
+
+    - run: rustup toolchain install stable-i686-pc-windows-msvc
+      if: matrix.os == 'windows'
 
     - name: install python dependencies
       run: pip install -U setuptools wheel twine cibuildwheel
@@ -149,39 +161,24 @@ jobs:
       run: cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
-        CIBW_SKIP: '*-win32 *-musllinux_i686'
-        CIBW_PLATFORM: ${{ matrix.platform || matrix.os }}
-        CIBW_TEST_REQUIRES: 'pytest'
+        # rust doesn't seem to be available for musl linux on i686
+        CIBW_SKIP: '*-musllinux_i686'
+        # we build for "alt_arch_name" if it exists, else 'auto
+        CIBW_ARCHS: ${{ matrix.alt_arch_name || 'auto' }}
+        # see https://cibuildwheel.readthedocs.io/en/stable/faq/#universal2, tests can run on cross-compiled binaries
+        CIBW_TEST_SKIP: '*-macosx_arm64'
+        CIBW_TEST_REQUIRES: pytest
         CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
         CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
         CIBW_ENVIRONMENT_WINDOWS: 'PATH="$UserProfile\.cargo\bin;$PATH"'
-        CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
-        CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
-        CIBW_ARCHS_MACOS: 'x86_64 arm64'
-        CIBW_TEST_SKIP: '*-macosx_arm64'  # see https://cibuildwheel.readthedocs.io/en/stable/faq/#universal2
-        CIBW_BEFORE_BUILD: >
-          pip install -U setuptools-rust &&
-          rustup default nightly &&
-          rustup show
+        CIBW_MANYLINUX_I686_IMAGE: manylinux2014
+        CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+        CIBW_MUSLLINUX_X86_64_IMAGE: musllinux_1_1
+        CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
+        CIBW_MUSLLINUX_AARCH64_IMAGE: musllinux_1_1
+        CIBW_BEFORE_BUILD: rustup show
         CIBW_BEFORE_BUILD_LINUX: >
-          pip install -U setuptools-rust &&
-          curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=nightly --profile=minimal -y &&
-          rustup show
-
-    - name: build windows 32bit binaries
-      if: matrix.os == 'windows'
-      run: cibuildwheel --output-dir dist
-      env:
-        CIBW_BUILD: 'cp3${{ matrix.python-version }}-win32'
-        CIBW_PLATFORM: windows
-        CIBW_TEST_REQUIRES: 'pytest'
-        CIBW_TEST_COMMAND: 'pytest {project}/tests -s'
-        CIBW_ENVIRONMENT: 'PATH="$UserProfile\.cargo\bin;$PATH"'
-        CIBW_BEFORE_BUILD: >
-          pip install -U setuptools-rust &&
-          rustup toolchain install nightly-i686-pc-windows-msvc &&
-          rustup default nightly-i686-pc-windows-msvc &&
-          rustup override set nightly-i686-pc-windows-msvc &&
+          curl https://sh.rustup.rs -sSf | sh -s -- --profile=minimal -y &&
           rustup show
 
     - name: list dist files
