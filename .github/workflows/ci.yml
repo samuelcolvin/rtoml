@@ -100,7 +100,6 @@ jobs:
     name: >
       build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
       (${{ matrix.alt_arch_name || matrix.arch }})
-#    needs: [test, lint]
     strategy:
       fail-fast: false
       matrix:
@@ -184,14 +183,54 @@ jobs:
           curl https://sh.rustup.rs -sSf | sh -s -- --profile=minimal -y &&
           rustup show
 
-    - name: list dist files
-      run: ${{ matrix.ls || 'ls -lh' }} dist/
+    - run: ${{ matrix.ls || 'ls -lh' }} dist/
 
-    - name: twine check
-      run: twine check dist/*
+    - run: twine check dist/*
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: pypi_files
+        path: dist
+
+  list-pypi-files:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: pypi_files
+          path: dist
+
+      - run: ls -lh dist/
+
+  release:
+    needs: [build]
+    if: "success() && startsWith(github.ref, 'refs/tags/')"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+
+    - run: pip install -U twine
+
+    - name: get dist artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: pypi_files
+        path: dist
+
+    - run: twine check dist/*
 
     - name: upload to pypi
-      if: startsWith(github.ref, 'refs/tags/')
       run: twine upload dist/*
       env:
         TWINE_USERNAME: __token__
