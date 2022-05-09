@@ -1,4 +1,4 @@
-include Cargo.toml
+include Cargo.toml Cargo.lock
 recursive-include src *
 include LICENSE
 include README.md
