@@ -9,6 +9,9 @@ use std::str::FromStr;
 use toml::Value::{Array, Boolean, Datetime, Float, Integer, String as TomlString, Table};
 use toml::{to_string as to_toml_string, to_string_pretty as to_toml_string_pretty, Value};
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 mod datetime;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
