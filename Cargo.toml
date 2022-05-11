@@ -8,7 +8,12 @@ edition = "2018"
 toml = {version = "0.5.9", features = ["preserve_order"]}
 serde = "1.0.126"
 pyo3 = {version = "0.16.2", features = ["extension-module"]}
+mimalloc = { version = "0.1.29", default-features = false }
 
 [lib]
 name = "_rtoml"
 crate-type = ["cdylib"]
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
