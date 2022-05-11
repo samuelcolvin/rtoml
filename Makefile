@@ -12,6 +12,7 @@ install-all: install
 
 .PHONY: build-dev
 build-dev:
+	rm -f rtoml/*.so
 	python ./setup.py develop
 
 .PHONY: build-prod
