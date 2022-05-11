@@ -8,6 +8,7 @@ import rtoml
 @pytest.mark.parametrize(
     'input_toml,output_obj',
     [
+        ('"" = "bar"', {'': 'bar'}),
         ('foo = "bar"', {'foo': 'bar'}),
         ('ports = [ 8001, 8001, 8002 ]', {'ports': [8001, 8001, 8002]}),
         ('x = 1979-05-27T07:32:00', {'x': datetime(1979, 5, 27, 7, 32)}),
