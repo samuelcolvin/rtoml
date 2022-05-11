@@ -1,10 +1,11 @@
 .DEFAULT_GOAL := all
 isort = isort rtoml tests
 black = black -S -l 120 --target-version py38 rtoml tests
+flake8 = flake8 --max-line-length=120 --max-complexity=14 --inline-quotes="'" --multiline-quotes='"""' --ignore=E203,W503 rtoml/ tests/
 
 install:
 	pip install -U pip wheel setuptools setuptools-rust
-	pip install -U -r tests/requirements.txt
+	pip install -r tests/requirements.txt
 
 .PHONY: install-all
 install-all: install
@@ -27,7 +28,7 @@ format:
 
 .PHONY: lint
 lint:
-	flake8 rtoml/ tests/
+	$(flake8) 
 	$(isort) --check-only --df
 	$(black) --check --diff
 	cargo fmt --version
