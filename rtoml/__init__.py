@@ -45,7 +45,7 @@ def dumps(obj: Any, *, pretty: bool = False, include_none: bool = True) -> str:
     else:
         serialize = _rtoml.serialize
 
-    return serialize(obj, include_none);
+    return serialize(obj, include_none)
 
 
 def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False, include_none: bool = True) -> int:
