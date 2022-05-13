@@ -2,7 +2,7 @@ extern crate pyo3;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyBool, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
+use pyo3::types::{PyAny, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
 use pyo3::{create_exception, wrap_pyfunction, PyErrArguments};
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::str::FromStr;
@@ -56,8 +56,7 @@ struct SerializePyObject<'p> {
 }
 
 impl<'p> SerializePyObject<'p> {
-    fn new(py: Python<'p>, obj: &'p PyObject, include_none: &PyObject) -> PyResult<Self> {
-        let include_none = include_none.extract::<&PyBool>(py)?.is_true();
+    fn new(py: Python<'p>, obj: &'p PyObject, include_none: bool) -> PyResult<Self> {
         let obj = obj.extract(py)?;
 
         Ok(Self { py, include_none, obj })
@@ -204,8 +203,8 @@ impl<'p> Serialize for SerializePyObject<'p> {
 }
 
 #[pyfunction]
-fn serialize(py: Python, obj: PyObject, include_none: PyObject) -> PyResult<String> {
-    let serializer = SerializePyObject::new(py, &obj, &include_none)?;
+fn serialize(py: Python, obj: PyObject, include_none: bool) -> PyResult<String> {
+    let serializer = SerializePyObject::new(py, &obj, include_none)?;
     match to_toml_string(&serializer) {
         Ok(s) => Ok(s),
         Err(e) => Err(TomlSerializationError::new_err(e.to_string())),
@@ -213,8 +212,8 @@ fn serialize(py: Python, obj: PyObject, include_none: PyObject) -> PyResult<Stri
 }
 
 #[pyfunction]
-fn serialize_pretty(py: Python, obj: PyObject, include_none: PyObject) -> PyResult<String> {
-    let serializer = SerializePyObject::new(py, &obj, &include_none)?;
+fn serialize_pretty(py: Python, obj: PyObject, include_none: bool) -> PyResult<String> {
+    let serializer = SerializePyObject::new(py, &obj, include_none)?;
     match to_toml_string_pretty(&serializer) {
         Ok(s) => Ok(s),
         Err(e) => Err(TomlSerializationError::new_err(e.to_string())),
