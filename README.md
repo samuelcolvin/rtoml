@@ -65,7 +65,7 @@ Serialize a python object to TOML and write it to a file. `file` may be a `Path`
 
 If `pretty` is true, output has a more "pretty" format.
 
-If `include_none` is false, none objectes are ommited (in dictionaries, tuples and lists as well).
+If `include_none` is `False`, `None` values are omitted from the generated toml string.
 
 ### Example
 
