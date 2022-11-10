@@ -107,7 +107,7 @@ impl<'py> Serialize for SerializePyObject<'py> {
 
         macro_rules! add_to_map {
             ($map:ident, $key:ident, $value:ident) => {
-                if let Ok(py_string) = $value.cast_as::<PyString>() {
+                if let Ok(py_string) = $key.cast_as::<PyString>() {
                     let str = py_string.to_str().map_err(map_py_err)?;
                     $map.serialize_key(str)?;
                 } else if $key.is_none() {
@@ -115,9 +115,9 @@ impl<'py> Serialize for SerializePyObject<'py> {
                 } else if let Ok(key) = $key.extract::<bool>() {
                     $map.serialize_key(if key { "true" } else { "false" })?;
                 } else {
+                    let key_repr = any_repr($key);
                     return Err(SerError::custom(format!(
-                        "Dictionary key is not a string: {:?}",
-                        $key
+                        "Dictionary key {key_repr} is not serializable"
                     )));
                 }
                 $map.serialize_value(&SerializePyObject {
@@ -188,15 +188,17 @@ impl<'py> Serialize for SerializePyObject<'py> {
                 ))),
             }
         } else {
-            let name = self.obj.get_type().name().map_err(map_py_err)?;
-            match self.obj.repr() {
-                Ok(repr) => Err(SerError::custom(format!(
-                    "{} is not serializable to TOML: {}",
-                    name, repr
-                ))),
-                Err(_) => Err(SerError::custom(format_args!("{name} is not serializable to TOML"))),
-            }
+            let obj_repr = any_repr(self.obj);
+            Err(SerError::custom(format!("{obj_repr} is not serializable to TOML")))
         }
+    }
+}
+
+fn any_repr(obj: &PyAny) -> String {
+    let name = obj.get_type().name().unwrap_or("unknown");
+    match obj.repr() {
+        Ok(repr) => format!("{repr} ({name})"),
+        Err(_) => name.to_string(),
     }
 }
 
