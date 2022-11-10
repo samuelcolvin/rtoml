@@ -108,7 +108,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
         }
 
         fn debug_py_err<E: ser::Error>(err: PyErr) -> E {
-            E::custom(format_args!("{:?}", err))
+            E::custom(format_args!("{err:?}"))
         }
 
         cast!(|x: &PyDict| {
@@ -181,7 +181,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 "{} is not serializable to TOML: {}",
                 name, repr,
             ))),
-            Err(_) => Err(ser::Error::custom(format_args!("{} is not serializable to TOML", name))),
+            Err(_) => Err(ser::Error::custom(format_args!("{name} is not serializable to TOML"))),
         }
     }
 }
