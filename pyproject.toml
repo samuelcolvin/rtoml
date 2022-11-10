@@ -61,6 +61,11 @@ exclude_lines = [
     "@overload",
 ]
 
+[tool.ruff]
+line-length = 120
+extend-select = ["Q"]
+flake8-quotes = {inline-quotes = "single", multiline-quotes = "double"}
+
 [tool.black]
 color = true
 line-length = 120

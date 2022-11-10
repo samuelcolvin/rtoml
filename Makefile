@@ -1,7 +1,6 @@
 .DEFAULT_GOAL := all
 isort = isort rtoml tests
 black = black rtoml tests
-flake8 = flake8 --max-line-length=120 --max-complexity=14 --inline-quotes="'" --multiline-quotes='"""' --ignore=E203,W503 rtoml/ tests/
 
 install:
 	pip install -U pip wheel pre-commit
@@ -38,7 +37,7 @@ format:
 
 .PHONY: lint-python
 lint-python:
-	$(flake8)
+	ruff src tests
 	$(isort) --check-only --df
 	$(black) --check --diff
 
