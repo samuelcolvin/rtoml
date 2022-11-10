@@ -48,6 +48,8 @@ sdist-include = ["Cargo.lock"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error"]
+# avoid pytest warning when pytest-speed is not installed
+markers = ["benchmark"]
 
 [tool.coverage.run]
 branch = true

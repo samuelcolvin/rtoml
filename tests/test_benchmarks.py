@@ -9,7 +9,7 @@ import rtoml
 
 data_toml_path = Path('tests/data.toml')
 
-pytestmark = pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher')
+pytestmark = pytest.mark.skipif(sys.version_info < (3, 8), reason='requires python3.8 or higher')
 
 
 def test_data():

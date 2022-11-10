@@ -7,7 +7,7 @@ __pycache__/
 /dist/
 /build/
 /env/
-/env310/
+/env3*/
 .pytest_cache/
 .mypy_cache/
 /sandbox/
