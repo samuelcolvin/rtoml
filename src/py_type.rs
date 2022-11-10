@@ -26,7 +26,7 @@ pub struct PyTypeLookup {
     pub timedelta: usize,
 }
 
-static TYPE_LOOKUP: GILOnceCell<ObTypeLookup> = GILOnceCell::new();
+static TYPE_LOOKUP: GILOnceCell<PyTypeLookup> = GILOnceCell::new();
 
 impl PyTypeLookup {
     fn new(py: Python) -> Self {
