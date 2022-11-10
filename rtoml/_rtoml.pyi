@@ -1,6 +1,6 @@
 from typing import Any
 
-VERSION: str
+__version__: str
 
 def deserialize(toml: str) -> Any: ...
 def serialize(obj: Any) -> str: ...

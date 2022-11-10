@@ -15,5 +15,5 @@ def test_example():
 
 
 def test_version():
-    assert isinstance(rtoml.VERSION, str)
-    print('rtoml VERSION:', rtoml.VERSION)
+    assert isinstance(rtoml.__version__, str)
+    print('rtoml __version__:', rtoml.__version__)

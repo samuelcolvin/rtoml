@@ -4,10 +4,11 @@ from typing import Any, Dict, TextIO, Union
 
 from . import _rtoml
 
-__all__ = 'VERSION', 'TomlParsingError', 'TomlSerializationError', 'load', 'loads', 'dumps', 'dump'
+__all__ = '__version__', 'TomlParsingError', 'TomlSerializationError', 'load', 'loads', 'dumps', 'dump'
 
 # VERSION is set in Cargo.toml
-VERSION = _rtoml.VERSION
+VERSION = _rtoml.__version__
+__version__ = _rtoml.__version__
 TomlParsingError = _rtoml.TomlParsingError
 TomlSerializationError = _rtoml.TomlSerializationError
 

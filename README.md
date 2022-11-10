@@ -3,6 +3,7 @@
 [![Actions Status](https://github.com/samuelcolvin/rtoml/workflows/CI/badge.svg)](https://github.com/samuelcolvin/rtoml/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)
 [![Coverage](https://codecov.io/gh/samuelcolvin/rtoml/branch/main/graph/badge.svg)](https://codecov.io/gh/samuelcolvin/rtoml)
 [![pypi](https://img.shields.io/pypi/v/rtoml.svg)](https://pypi.python.org/pypi/rtoml)
+[![versions](https://img.shields.io/pypi/pyversions/rtoml.svg)](https://github.com/samuelcolvin/rtoml)
 [![license](https://img.shields.io/github/license/samuelcolvin/rtoml.svg)](https://github.com/samuelcolvin/rtoml/blob/main/LICENSE)
 
 

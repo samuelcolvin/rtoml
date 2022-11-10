@@ -264,7 +264,7 @@ dependencies = [
 
 [[package]]
 name = "rtoml"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "ahash",
  "mimalloc",
