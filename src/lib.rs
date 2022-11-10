@@ -8,12 +8,14 @@ use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::str::FromStr;
 use toml::Value::{Array, Boolean, Datetime, Float, Integer, String as TomlString, Table};
 use toml::{to_string as to_toml_string, to_string_pretty as to_toml_string_pretty, Value};
+use crate::py_type::FindPyType;
 
 #[cfg(not(target_env = "musl"))]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 mod datetime;
+mod py_type;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 create_exception!(_rtoml, TomlParsingError, PyValueError);
@@ -53,16 +55,30 @@ fn deserialize(py: Python, toml: String) -> PyResult<PyObject> {
 }
 
 // taken from https://github.com/mre/hyperjson/blob/10d31608584ef4499d6b6b10b6dc9455b358fe3d/src/lib.rs#L287-L402
-struct SerializePyObject<'p, 'a> {
-    py: Python<'p>,
-    obj: &'a PyAny,
+struct SerializePyObject<'py> {
+    py: Python<'py>,
+    obj: &'py PyAny
+    // find_type: FindPyType<'py>
 }
 
-impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
+impl<'py> SerializePyObject<'py> {
+    fn new(py: Python<'py>, obj: &'py PyAny) -> Self {
+        Self {
+            py,
+            obj
+            // find_type: FindPyType::new(py)
+        }
+    }
+}
+
+impl<'py> Serialize for SerializePyObject<'py> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
+        let find_type = FindPyType::new(self.py);
+        let py_ob_type = find_type.find(self.obj);
+        dbg!(py_ob_type);
         macro_rules! cast {
             ($f:expr) => {
                 if let Ok(val) = PyTryFrom::try_from(self.obj) {
