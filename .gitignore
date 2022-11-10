@@ -18,3 +18,4 @@ __pycache__/
 .coverage
 .auto-format
 /toml-test/
+/.benchmarks/

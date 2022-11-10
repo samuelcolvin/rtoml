@@ -48,6 +48,7 @@ sdist-include = ["Cargo.lock"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error"]
+xfail_strict = true
 # avoid pytest warning when pytest-speed is not installed
 markers = ["benchmark"]
 

@@ -222,4 +222,5 @@ apple.taste.sweet = true
 [fruit.apple.texture]  # you can add sub-tables
 smooth = true
 """
-    assert rtoml.loads(s) == ...
+    rtoml.loads(s)
+    # assert rtoml.loads(s) == ...

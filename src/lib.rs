@@ -3,7 +3,7 @@ extern crate pyo3;
 use crate::py_type::PyTypeLookup;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDateTime, PyDict, PyList, PyString, PyTuple};
+use pyo3::types::{PyAny, PyDate, PyDateTime, PyDict, PyList, PyString, PyTime, PyTuple};
 use pyo3::{create_exception, wrap_pyfunction, PyErrArguments};
 use serde::ser::{Error as SerError, Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::fmt;
@@ -80,6 +80,11 @@ impl<'py> Serialize for SerializePyObject<'py> {
         fn map_py_err<I: fmt::Display, O: SerError>(err: I) -> O {
             O::custom(err.to_string())
         }
+        macro_rules! serde_err {
+            ($msg:expr, $( $msg_args:expr ),+ ) => {
+                Err(SerError::custom(format!($msg, $( $msg_args ),+ )))
+            };
+        }
 
         macro_rules! serialize {
             ($t:ty) => {
@@ -116,9 +121,7 @@ impl<'py> Serialize for SerializePyObject<'py> {
                     $map.serialize_key(if key { "true" } else { "false" })?;
                 } else {
                     let key_repr = any_repr($key);
-                    return Err(SerError::custom(format!(
-                        "Dictionary key {key_repr} is not serializable"
-                    )));
+                    return serde_err!("{} is not serializable as a TOML key", key_repr);
                 }
                 $map.serialize_value(&SerializePyObject {
                     obj: $value,
@@ -182,14 +185,24 @@ impl<'py> Serialize for SerializePyObject<'py> {
             let iso_str = dt_str.replacen("+00:00", "Z", 1);
             match toml::value::Datetime::from_str(&iso_str) {
                 Ok(dt) => dt.serialize(serializer),
-                Err(e) => Err(SerError::custom(format!(
-                    "unable to convert datetime string to toml datetime object {:?}",
-                    e
-                ))),
+                Err(e) => serde_err!("unable to convert datetime string to TOML datetime object {:?}", e),
+            }
+        } else if ob_type == lookup.date {
+            let py_date: &PyDate = self.obj.cast_as().map_err(map_py_err)?;
+            let date_str = py_date.str().map_err(map_py_err)?.to_str().map_err(map_py_err)?;
+            match toml::value::Datetime::from_str(date_str) {
+                Ok(dt) => dt.serialize(serializer),
+                Err(e) => serde_err!("unable to convert date string to TOML date object {:?}", e),
+            }
+        } else if ob_type == lookup.time {
+            let py_time: &PyTime = self.obj.cast_as().map_err(map_py_err)?;
+            let time_str = py_time.str().map_err(map_py_err)?.to_str().map_err(map_py_err)?;
+            match toml::value::Datetime::from_str(time_str) {
+                Ok(dt) => dt.serialize(serializer),
+                Err(e) => serde_err!("unable to convert time string to TOML time object {:?}", e),
             }
         } else {
-            let obj_repr = any_repr(self.obj);
-            Err(SerError::custom(format!("{obj_repr} is not serializable to TOML")))
+            serde_err!("{} is not serializable to TOML", any_repr(self.obj))
         }
     }
 }
