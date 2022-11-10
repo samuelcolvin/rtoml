@@ -49,7 +49,6 @@ pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<PyObject> {
     Ok(py_dt)
 }
 
-
 #[pyclass(module = "rtoml._rtoml", extends = PyTzInfo)]
 struct TzInfo {
     hours: i8,
