@@ -134,6 +134,13 @@ def test_load_data_toml(benchmark):
     benchmark(rtoml.load, data_toml_path, name='load-path')
 
 
+@pytest.mark.benchmark(group='load-dict')
+def test_load_big_dict(benchmark):
+    d = {str(i): i for i in range(1000)}
+    toml_str = rtoml.dumps(d)
+    benchmark(rtoml.loads, toml_str)
+
+
 @pytest.mark.benchmark(group='dumps-data.toml')
 def test_dump_data_toml(benchmark):
     data = rtoml.load(data_toml_path)
