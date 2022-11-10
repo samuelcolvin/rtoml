@@ -18,15 +18,15 @@ coverage on python code. Other TOML libraries for python I tried all failed to p
 
 ## Install
 
-Requires `python>=3.7`, binaries are available from pypi for linux, macos and windows,
+Requires `python>=3.7`, binaries are available from pypi for Linux, macOS and Windows,
 see [here](https://pypi.org/project/rtoml/#files).
 
 ```bash
 pip install rtoml
 ```
 
-If no binary is available on pypi for you system configuration; you'll need rust nightly and
-[`setuptools-rust`](https://github.com/PyO3/setuptools-rust) installed before you can install rtoml.
+If no binary is available on pypi for you system configuration; you'll need rust stable
+installed before you can install rtoml.
 
 ## Usage
 
