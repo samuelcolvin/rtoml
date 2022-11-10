@@ -1,11 +1,13 @@
 .DEFAULT_GOAL := all
 isort = isort rtoml tests
-black = black -S -l 120 --target-version py38 rtoml tests
+black = black rtoml tests
 flake8 = flake8 --max-line-length=120 --max-complexity=14 --inline-quotes="'" --multiline-quotes='"""' --ignore=E203,W503 rtoml/ tests/
 
 install:
-	pip install -U pip wheel setuptools setuptools-rust
+	pip install -U pip wheel pre-commit
 	pip install -r tests/requirements.txt
+	pip install -e .
+	pre-commit install
 
 .PHONY: install-all
 install-all: install
@@ -13,12 +15,19 @@ install-all: install
 
 .PHONY: build-dev
 build-dev:
-	rm -f rtoml/*.so
-	python ./setup.py develop
+	@rm -f rtoml/*.so
+	cargo build
+	@rm -f target/debug/lib_rtoml.d
+	@rm -f target/debug/lib_rtoml.rlib
+	@mv target/debug/lib_rtoml.* rtoml/_rtoml.so
 
 .PHONY: build-prod
 build-prod:
-	python ./setup.py install
+	@rm -f rtoml/*.so
+	cargo build --release
+	@rm -f target/release/lib_rtoml.d
+	@rm -f target/release/lib_rtoml.rlib
+	@mv target/release/lib_rtoml.* rtoml/_rtoml.so
 
 .PHONY: format
 format:
@@ -26,15 +35,22 @@ format:
 	$(black)
 	cargo fmt
 
-.PHONY: lint
-lint:
-	$(flake8) 
+
+.PHONY: lint-python
+lint-python:
+	$(flake8)
 	$(isort) --check-only --df
 	$(black) --check --diff
+
+.PHONY: lint-rust
+lint-rust:
 	cargo fmt --version
 	cargo fmt --all -- --check
 	cargo clippy --version
-	cargo clippy -- -D warnings
+	cargo clippy -- -D warnings -A incomplete_features -W clippy::dbg_macro -W clippy::print_stdout
+
+.PHONY: lint
+lint: lint-python lint-rust
 
 .PHONY: mypy
 mypy:

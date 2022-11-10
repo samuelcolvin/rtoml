@@ -12,7 +12,10 @@ mimalloc = { version = "0.1.29", default-features = false }
 
 [lib]
 name = "_rtoml"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
+
+[package.metadata.maturin]
+name = "rtoml._rtoml"
 
 [profile.release]
 lto = "fat"
