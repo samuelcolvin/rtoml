@@ -20,31 +20,6 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 create_exception!(_rtoml, TomlParsingError, PyValueError);
 create_exception!(_rtoml, TomlSerializationError, PyValueError);
 
-// fn convert_value(t: &Value, py: Python) -> PyResult<PyObject> {
-//     match t {
-//         Table(table) => {
-//             let d = PyDict::new(py);
-//             for (key, value) in table.iter() {
-//                 d.set_item(key.to_string(), convert_value(value, py)?)?;
-//             }
-//             Ok(d.to_object(py))
-//         }
-//
-//         Array(array) => {
-//             let mut list: Vec<PyObject> = Vec::with_capacity(array.len());
-//             for value in array {
-//                 list.push(convert_value(value, py)?)
-//             }
-//             Ok(list.to_object(py))
-//         }
-//         TomlString(v) => Ok(v.to_object(py)),
-//         Integer(v) => Ok(v.to_object(py)),
-//         Float(v) => Ok(v.to_object(py)),
-//         Boolean(v) => Ok(v.to_object(py)),
-//         Datetime(v) => datetime::parse(py, v),
-//     }
-// }
-
 #[pyfunction]
 fn deserialize(py: Python, toml_data: String) -> PyResult<PyObject> {
     let mut deserializer = Deserializer::new(&toml_data);

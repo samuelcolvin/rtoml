@@ -211,9 +211,12 @@ def test_mixed_array():
     assert rtoml.loads('x = ["hi", 42]') == {'x': ['hi', 42]}
 
 
-# https://github.com/alexcrichton/toml-rs/issues/367
-@pytest.mark.xfail
 def test_subtable():
+    """
+    This is slightly incorrect, but matches normal TOML parsing.
+
+    See https://github.com/alexcrichton/toml-rs/issues/367
+    """
     s = """\
 [fruit]
 apple.color = "red"
@@ -222,5 +225,5 @@ apple.taste.sweet = true
 [fruit.apple.texture]  # you can add sub-tables
 smooth = true
 """
-    rtoml.loads(s)
-    # assert rtoml.loads(s) == ...
+    with pytest.raises(rtoml.TomlParsingError, match='duplicate key: `apple` for key `fruit` at line 5 column 1'):
+        rtoml.loads(s)

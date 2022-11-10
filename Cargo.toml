@@ -10,6 +10,7 @@ serde = "1.0.126"
 pyo3 = {version = "0.17.3", features = ["extension-module"]}
 mimalloc = { version = "0.1.29", default-features = false }
 ahash = "0.8.1"
+nohash-hasher = "0.2.0"
 
 [lib]
 name = "_rtoml"
