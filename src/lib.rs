@@ -1,14 +1,15 @@
 extern crate pyo3;
 
+use crate::py_type::PyTypeLookup;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
+use pyo3::types::{PyAny, PyDate, PyDateTime, PyDict, PyFloat, PyList, PyTuple};
 use pyo3::{create_exception, wrap_pyfunction, PyErrArguments};
-use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
+use serde::ser::{self, Error as SerError, Serialize, SerializeMap, SerializeSeq, Serializer};
+use std::fmt;
 use std::str::FromStr;
 use toml::Value::{Array, Boolean, Datetime, Float, Integer, String as TomlString, Table};
 use toml::{to_string as to_toml_string, to_string_pretty as to_toml_string_pretty, Value};
-use crate::py_type::FindPyType;
 
 #[cfg(not(target_env = "musl"))]
 #[global_allocator]
@@ -56,17 +57,17 @@ fn deserialize(py: Python, toml: String) -> PyResult<PyObject> {
 
 // taken from https://github.com/mre/hyperjson/blob/10d31608584ef4499d6b6b10b6dc9455b358fe3d/src/lib.rs#L287-L402
 struct SerializePyObject<'py> {
+    obj: &'py PyAny,
     py: Python<'py>,
-    obj: &'py PyAny
-    // find_type: FindPyType<'py>
+    ob_type_lookup: &'py PyTypeLookup,
 }
 
 impl<'py> SerializePyObject<'py> {
     fn new(py: Python<'py>, obj: &'py PyAny) -> Self {
         Self {
+            obj,
             py,
-            obj
-            // find_type: FindPyType::new(py)
+            ob_type_lookup: PyTypeLookup::cached(py),
         }
     }
 }
@@ -76,138 +77,136 @@ impl<'py> Serialize for SerializePyObject<'py> {
     where
         S: Serializer,
     {
-        let find_type = FindPyType::new(self.py);
-        let py_ob_type = find_type.find(self.obj);
-        dbg!(py_ob_type);
-        macro_rules! cast {
-            ($f:expr) => {
-                if let Ok(val) = PyTryFrom::try_from(self.obj) {
-                    return $f(val);
-                }
-            };
+        let lookup = self.ob_type_lookup;
+
+        fn map_py_err<I: fmt::Display, O: SerError>(err: I) -> O {
+            O::custom(err.to_string())
         }
 
-        macro_rules! extract {
+        macro_rules! serialize {
             ($t:ty) => {
-                if let Ok(val) = <$t as FromPyObject>::extract(self.obj) {
-                    return val.serialize(serializer);
+                match self.obj.extract::<$t>() {
+                    Ok(v) => v.serialize(serializer),
+                    Err(e) => Err(map_py_err(e)),
                 }
             };
         }
-
-        macro_rules! isa {
-            ($v:ident, $t:ty) => {
-                $v.is_instance_of::<$t>().map_err(debug_py_err)?
-            };
-        }
-
-        macro_rules! add_to_map {
-            ($map:ident, $key:ident, $value:ident) => {
-                if $key.is_none() {
-                    $map.serialize_key("null")?;
-                } else if let Ok(key) = $key.extract::<bool>() {
-                    $map.serialize_key(if key { "true" } else { "false" })?;
-                } else if let Ok(key) = $key.str() {
-                    let key = key.to_string();
-                    $map.serialize_key(&key)?;
-                } else {
-                    return Err(ser::Error::custom(format_args!(
-                        "Dictionary key is not a string: {:?}",
-                        $key
-                    )));
-                }
-                $map.serialize_value(&SerializePyObject {
-                    py: self.py,
-                    obj: $value,
-                })?;
-            };
-        }
-
-        fn debug_py_err<E: ser::Error>(err: PyErr) -> E {
-            E::custom(format_args!("{:?}", err))
-        }
-
-        cast!(|x: &PyDict| {
-            let mut map = serializer.serialize_map(Some(x.len()))?;
-
-            // https://github.com/alexcrichton/toml-rs/issues/142#issuecomment-278970591
-            // taken from alexcrichton/toml-rs/blob/ec4e821f3bb081391801e4c00aa90bf66a53562c/src/value.rs#L364-L387
-            for (k, v) in x {
-                if !isa!(v, PyList) && !isa!(v, PyTuple) && !isa!(v, PyDict) {
-                    add_to_map!(map, k, v);
-                }
-            }
-            for (k, v) in x {
-                if isa!(v, PyList) || isa!(v, PyTuple) {
-                    add_to_map!(map, k, v);
-                }
-            }
-            for (k, v) in x {
-                if isa!(v, PyDict) {
-                    add_to_map!(map, k, v);
-                }
-            }
-            map.end()
-        });
 
         macro_rules! to_seq {
-            ($type:ty) => {
-                cast!(|x: $type| {
-                    let mut seq = serializer.serialize_seq(Some(x.len()))?;
-                    for element in x {
-                        seq.serialize_element(&SerializePyObject {
-                            py: self.py,
-                            obj: element,
-                        })?
-                    }
-                    return seq.end();
-                });
-            };
+            ($type:ty) => {{
+                let py_seq: $type = self.obj.cast_as().map_err(map_py_err)?;
+                let mut seq = serializer.serialize_seq(Some(x.len()))?;
+                for element in x {
+                    seq.serialize_element(&SerializePyObject {
+                        obj: element,
+                        py: self.py,
+                        ob_type_lookup: self.ob_type_lookup,
+                    })?
+                }
+                seq.end();
+            }};
         }
 
         to_seq!(&PyList);
         to_seq!(&PyTuple);
 
-        cast!(|x: &PyDateTime| {
-            let dt_str: &str = x.str().map_err(debug_py_err)?.extract().map_err(debug_py_err)?;
+        macro_rules! add_to_map {
+            ($map:ident, $key:ident, $value:ident) => {
+                if let Ok(py_string) = v.cast_as::<PyString>() {
+                    let str = py_string.to_str().map_err(map_py_err)?
+                    $map.serialize_key(str)?;
+                } else if $key.is_none() {
+                    $map.serialize_key("null")?;
+                } else if let Ok(key) = $key.extract::<bool>() {
+                    $map.serialize_key(if key { "true" } else { "false" })?;
+                } else {
+                    return Err(SerError::custom(format!("Dictionary key is not a string: {:?}", $key)));
+                }
+                $map.serialize_value(&SerializePyObject {
+                    obj: $value,
+                    py: self.py,
+                    ob_type_lookup: self.ob_type_lookup
+                })?;
+            };
+        }
+
+        let ob_type = self.obj.get_type_ptr() as usize;
+        // ugly but this seems to be just marginally faster than a guarded match, also allows for custom cases
+        // if we wanted to add them
+        if ob_type == lookup.none {
+            serializer.serialize_str("null")
+        } else if ob_type == lookup.int {
+            serialize!(i64);
+        } else if ob_type == lookup.bool {
+            serialize!(bool);
+        } else if ob_type == lookup.float {
+            serialize!(f64);
+        } else if ob_type == lookup.string {
+            serialize!(&str);
+        } else if ob_type == lookup.bytes {
+            serialize!(&[u8]);
+        } else if ob_type == lookup.bytearray {
+            serialize!(&[u8]);
+        } else if ob_type == lookup.dict {
+            let py_dict: &PyDict = self.obj.cast_as().map_err(map_py_err)?;
+
+            let len = py_dict.len();
+            let mut simple_items: Vec<(&PyAny, &PyAny)> = Vec::with_capacity(len);
+            let mut array_items: Vec<(&PyAny, &PyAny)> = Vec::with_capacity(len);
+            let mut dict_items: Vec<(&PyAny, &PyAny)> = Vec::with_capacity(len);
+
+            for (k, v) in py_dict {
+                if v.cast_as::<PyDict>().ok() {
+                    dict_items.push((k, v));
+                } else if v.cast_as::<PyList>().ok() {
+                    array_items.push((k, v));
+                } else if v.cast_as::<PyTuple>().ok() {
+                    array_items.push((k, v));
+                } else {
+                    simple_items.push((k, v));
+                }
+            }
+            let mut map = serializer.serialize_map(Some(len))?;
+            for (k, v) in simple_items {
+                add_to_map!(map, k, v);
+            }
+            for (k, v) in array_items {
+                add_to_map!(map, k, v);
+            }
+            for (k, v) in dict_items {
+                add_to_map!(map, k, v);
+            }
+        } else if ob_type == lookup.list {
+            to_seq!(&PyList);
+        } else if ob_type == lookup.tuple {
+            to_seq!(&PyTuple);
+        } else if ob_type == lookup.datetime {
+            let py_dt: &PyDateTime = self.obj.cast_as().map_err(map_py_err)?;
+            let dt_str = py_dt.str().map_err(map_py_err)?.to_str().map_err(map_py_err)?;
             let iso_str = dt_str.replacen("+00:00", "Z", 1);
             match toml::value::Datetime::from_str(&iso_str) {
                 Ok(dt) => dt.serialize(serializer),
-                Err(e) => Err(ser::Error::custom(format_args!(
+                Err(e) => Err(SerError::custom(format!(
                     "unable to convert datetime string to toml datetime object {:?}",
                     e
                 ))),
             }
-        });
-
-        extract!(String);
-        extract!(bool);
-
-        cast!(|x: &PyFloat| x.value().serialize(serializer));
-        extract!(u64);
-        extract!(i64);
-
-        if self.obj.is_none() {
-            return serializer.serialize_str("null");
-        }
-
-        let name = self.obj.get_type().name().map_err(debug_py_err)?;
-        match self.obj.repr() {
-            Ok(repr) => Err(ser::Error::custom(format_args!(
-                "{} is not serializable to TOML: {}",
-                name, repr,
-            ))),
-            Err(_) => Err(ser::Error::custom(format_args!("{} is not serializable to TOML", name))),
+        } else {
+            let name = self.obj.get_type().name().map_err(map_py_err)?;
+            match self.obj.repr() {
+                Ok(repr) => Err(SerError::custom(format!(
+                    "{} is not serializable to TOML: {}",
+                    name, repr
+                ))),
+                Err(_) => Err(SerError::custom(format_args!("{} is not serializable to TOML", name))),
+            }
         }
     }
 }
 
 #[pyfunction]
-fn serialize(py: Python, obj: PyObject) -> PyResult<String> {
-    let s = SerializePyObject {
-        py,
-        obj: obj.extract(py)?,
-    };
+fn serialize(py: Python, obj: &PyAny) -> PyResult<String> {
+    let s = SerializePyObject::new(py, obj);
     match to_toml_string(&s) {
         Ok(s) => Ok(s),
         Err(e) => Err(TomlSerializationError::new_err(e.to_string())),
@@ -215,11 +214,8 @@ fn serialize(py: Python, obj: PyObject) -> PyResult<String> {
 }
 
 #[pyfunction]
-fn serialize_pretty(py: Python, obj: PyObject) -> PyResult<String> {
-    let s = SerializePyObject {
-        py,
-        obj: obj.extract(py)?,
-    };
+fn serialize_pretty(py: Python, obj: &PyAny) -> PyResult<String> {
+    let s = SerializePyObject::new(py, obj);
     match to_toml_string_pretty(&s) {
         Ok(s) => Ok(s),
         Err(e) => Err(TomlSerializationError::new_err(e.to_string())),
