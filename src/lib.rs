@@ -3,7 +3,7 @@ extern crate pyo3;
 use crate::py_type::PyTypeLookup;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDateTime, PyDict, PyList, PyTuple, PyString};
+use pyo3::types::{PyAny, PyDateTime, PyDict, PyList, PyString, PyTuple};
 use pyo3::{create_exception, wrap_pyfunction, PyErrArguments};
 use serde::ser::{Error as SerError, Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::fmt;
@@ -115,12 +115,15 @@ impl<'py> Serialize for SerializePyObject<'py> {
                 } else if let Ok(key) = $key.extract::<bool>() {
                     $map.serialize_key(if key { "true" } else { "false" })?;
                 } else {
-                    return Err(SerError::custom(format!("Dictionary key is not a string: {:?}", $key)));
+                    return Err(SerError::custom(format!(
+                        "Dictionary key is not a string: {:?}",
+                        $key
+                    )));
                 }
                 $map.serialize_value(&SerializePyObject {
                     obj: $value,
                     py: self.py,
-                    ob_type_lookup: self.ob_type_lookup
+                    ob_type_lookup: self.ob_type_lookup,
                 })?;
             };
         }
@@ -139,9 +142,7 @@ impl<'py> Serialize for SerializePyObject<'py> {
             serialize!(f64)
         } else if ob_type == lookup.string {
             serialize!(&str)
-        } else if ob_type == lookup.bytes {
-            serialize!(&[u8])
-        } else if ob_type == lookup.bytearray {
+        } else if ob_type == lookup.bytes || ob_type == lookup.bytearray {
             serialize!(&[u8])
         } else if ob_type == lookup.dict {
             let py_dict: &PyDict = self.obj.cast_as().map_err(map_py_err)?;
@@ -154,9 +155,7 @@ impl<'py> Serialize for SerializePyObject<'py> {
             for (k, v) in py_dict {
                 if v.cast_as::<PyDict>().is_ok() {
                     dict_items.push((k, v));
-                } else if v.cast_as::<PyList>().is_ok() {
-                    array_items.push((k, v));
-                } else if v.cast_as::<PyTuple>().is_ok() {
+                } else if v.cast_as::<PyList>().is_ok() || v.cast_as::<PyTuple>().is_ok() {
                     array_items.push((k, v));
                 } else {
                     simple_items.push((k, v));
@@ -195,7 +194,7 @@ impl<'py> Serialize for SerializePyObject<'py> {
                     "{} is not serializable to TOML: {}",
                     name, repr
                 ))),
-                Err(_) => Err(SerError::custom(format_args!("{} is not serializable to TOML", name))),
+                Err(_) => Err(SerError::custom(format_args!("{name} is not serializable to TOML"))),
             }
         }
     }
