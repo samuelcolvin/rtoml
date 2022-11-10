@@ -12,12 +12,12 @@ pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<PyObject> {
                 let py_tz: PyObject;
                 let tzinfo = match &datetime.offset {
                     Some(offset) => {
-                        let tz_info: TzClass = match offset {
-                            TomlOffset::Z => TzClass::new(0, 0),
-                            TomlOffset::Custom { hours, minutes } => TzClass::new(*hours, *minutes),
+                        let tz_info = match offset {
+                            TomlOffset::Z => TzInfo::new(0, 0),
+                            TomlOffset::Custom { hours, minutes } => TzInfo::new(*hours, *minutes),
                         };
                         py_tz = Py::new(py, tz_info)?.to_object(py);
-                        Some(&py_tz)
+                        Some(py_tz.extract(py)?)
                     }
                     None => None,
                 };
@@ -49,17 +49,17 @@ pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<PyObject> {
     Ok(py_dt)
 }
 
-#[pyclass(extends=PyTzInfo)]
-struct TzClass {
+#[pyclass(module = "rtoml._rtoml", extends = PyTzInfo)]
+struct TzInfo {
     hours: i8,
     minutes: u8,
 }
 
 #[pymethods]
-impl TzClass {
+impl TzInfo {
     #[new]
     fn new(hours: i8, minutes: u8) -> Self {
-        TzClass { hours, minutes }
+        Self { hours, minutes }
     }
 
     fn seconds(&self) -> i32 {
@@ -70,15 +70,23 @@ impl TzClass {
         PyDelta::new(py, 0, self.seconds(), 0, true)
     }
 
-    fn tzname(&self, _py: Python<'_>, _dt: &PyDateTime) -> String {
+    fn tzname(&self, _dt: &PyDateTime) -> String {
+        self.__str__()
+    }
+
+    fn dst(&self, _dt: &PyDateTime) -> Option<&PyDelta> {
+        None
+    }
+
+    fn __repr__(&self) -> String {
+        format!("TzInfo({})", self.__str__())
+    }
+
+    fn __str__(&self) -> String {
         if self.hours == 0 && self.minutes == 0 {
             "UTC".to_string()
         } else {
             format!("UTC{:+03}:{:02}", self.hours, self.minutes)
         }
-    }
-
-    fn dst(&self, _py: Python<'_>, _dt: &PyDateTime) -> Option<&PyDelta> {
-        None
     }
 }

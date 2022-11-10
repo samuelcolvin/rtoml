@@ -1,9 +1,55 @@
 [build-system]
-requires = ["setuptools", "wheel", "setuptools-rust"]
+requires = ["maturin>=0.13,<0.14"]
+build-backend = "maturin"
+
+[project]
+name = "rtoml"
+requires-python = ">=3.7"
+authors = [
+    {name = "Samuel Colvin", email = "s@muelcolvin.com"}
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Unix",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: Console",
+    "Environment :: MacOS X",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet",
+]
+dynamic = [
+    "description",
+    "license",
+    "readme",
+    "version"
+]
+
+[project.urls]
+Homepage = "https://github.com/samuelcolvin/rtoml"
+Funding = "https://github.com/sponsors/samuelcolvin"
+Source = "https://github.com/samuelcolvin/rtoml"
+
+[tool.maturin]
+bindings = "pyo3"
+sdist-include = ["Cargo.lock"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error"]
+# avoid pytest warning when pytest-speed is not installed
+markers = ["benchmark"]
 
 [tool.coverage.run]
 branch = true
@@ -17,6 +63,18 @@ exclude_lines = [
     "@overload",
 ]
 
+[tool.ruff]
+line-length = 120
+extend-select = ["Q"]
+flake8-quotes = {inline-quotes = "single", multiline-quotes = "double"}
+
+[tool.black]
+color = true
+line-length = 120
+target-version = ["py37", "py38", "py39", "py310"]
+skip-string-normalization = true
+skip-magic-trailing-comma = true
+
 [tool.isort]
 line_length = 120
 known_first_party = ["rtoml"]
@@ -24,6 +82,7 @@ multi_line_output = 3
 include_trailing_comma = true
 force_grid_wrap = 0
 combine_as_imports = true
+color_output = true
 skip = "tests/toml_test.py"
 
 [tool.mypy]
