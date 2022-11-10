@@ -1,10 +1,9 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
-use pyo3::{create_exception, wrap_pyfunction, PyErrArguments};
+use pyo3::{create_exception, wrap_pyfunction};
+use serde::de::DeserializeSeed;
 
-use toml::Value::{Array, Boolean, Datetime, Float, Integer, String as TomlString, Table};
-use toml::{to_string as to_toml_string, to_string_pretty as to_toml_string_pretty, Value};
+use toml::{to_string as to_toml_string, to_string_pretty as to_toml_string_pretty, Deserializer};
 
 use crate::ser::SerializePyObject;
 
@@ -13,6 +12,7 @@ use crate::ser::SerializePyObject;
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 mod datetime;
+mod de;
 mod py_type;
 mod ser;
 
@@ -20,37 +20,12 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 create_exception!(_rtoml, TomlParsingError, PyValueError);
 create_exception!(_rtoml, TomlSerializationError, PyValueError);
 
-fn convert_value(t: &Value, py: Python) -> PyResult<PyObject> {
-    match t {
-        Table(table) => {
-            let d = PyDict::new(py);
-            for (key, value) in table.iter() {
-                d.set_item(key.to_string(), convert_value(value, py)?)?;
-            }
-            Ok(d.to_object(py))
-        }
-
-        Array(array) => {
-            let mut list: Vec<PyObject> = Vec::with_capacity(array.len());
-            for value in array {
-                list.push(convert_value(value, py)?)
-            }
-            Ok(list.to_object(py))
-        }
-        TomlString(v) => Ok(v.to_object(py)),
-        Integer(v) => Ok(v.to_object(py)),
-        Float(v) => Ok(v.to_object(py)),
-        Boolean(v) => Ok(v.to_object(py)),
-        Datetime(v) => datetime::parse(py, v),
-    }
-}
-
 #[pyfunction]
-fn deserialize(py: Python, toml: String) -> PyResult<PyObject> {
-    match toml.parse::<Value>() {
-        Ok(v) => convert_value(&v, py).map_err(|e| TomlParsingError::new_err(e.arguments(py))),
-        Err(e) => Err(TomlParsingError::new_err(e.to_string())),
-    }
+fn deserialize(py: Python, toml_data: String) -> PyResult<PyObject> {
+    let mut deserializer = Deserializer::new(&toml_data);
+    let seed = de::PyDeserializer::new(py);
+    seed.deserialize(&mut deserializer)
+        .map_err(|e| TomlParsingError::new_err(e.to_string()))
 }
 
 #[pyfunction]
