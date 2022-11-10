@@ -134,7 +134,6 @@ def test_load_data_toml(benchmark):
     benchmark(rtoml.load, data_toml_path, name='load-path')
 
 
-@pytest.mark.xfail(reason='dumping now working')
 @pytest.mark.benchmark(group='dumps-data.toml')
 def test_dump_data_toml(benchmark):
     data = rtoml.load(data_toml_path)
