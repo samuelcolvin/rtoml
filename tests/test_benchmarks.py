@@ -1,3 +1,4 @@
+import sys
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
@@ -7,6 +8,8 @@ from dirty_equals import HasRepr
 import rtoml
 
 data_toml_path = Path('tests/data.toml')
+
+pytestmark = pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher')
 
 
 def test_data():
