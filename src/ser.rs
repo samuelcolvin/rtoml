@@ -77,9 +77,10 @@ impl<'py> Serialize for SerializePyObject<'py> {
             let mut dict_items: Vec<(&PyAny, &PyAny)> = Vec::with_capacity(len);
 
             for (k, v) in py_dict {
-                if v.cast_as::<PyDict>().is_ok() {
+                let v_ob_type = v.get_type_ptr() as usize;
+                if v_ob_type == lookup.dict {
                     dict_items.push((k, v));
-                } else if v.cast_as::<PyList>().is_ok() || v.cast_as::<PyTuple>().is_ok() {
+                } else if v_ob_type == lookup.list || v_ob_type == lookup.tuple {
                     array_items.push((k, v));
                 } else {
                     simple_items.push((k, v));
