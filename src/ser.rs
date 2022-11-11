@@ -65,9 +65,9 @@ impl<'py> Serialize for SerializePyObject<'py> {
         } else if ob_type == lookup.float {
             serialize!(f64)
         } else if ob_type == lookup.string {
-            serialize!(&str)
-        } else if ob_type == lookup.bytes || ob_type == lookup.bytearray {
-            serialize!(&[u8])
+            let py_str: &PyString = self.obj.cast_as().map_err(map_py_err)?;
+            let s = py_str.to_str().map_err(map_py_err)?;
+            serializer.serialize_str(s)
         } else if ob_type == lookup.dict {
             let py_dict: &PyDict = self.obj.cast_as().map_err(map_py_err)?;
 
@@ -139,6 +139,8 @@ impl<'py> Serialize for SerializePyObject<'py> {
                 Ok(dt) => dt.serialize(serializer),
                 Err(e) => serde_err!("unable to convert time string to TOML time object {:?}", e),
             }
+        } else if ob_type == lookup.bytes || ob_type == lookup.bytearray {
+            serialize!(&[u8])
         } else {
             serde_err!("{} is not serializable to TOML", any_repr(self.obj))
         }

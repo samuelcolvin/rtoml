@@ -20,6 +20,7 @@ import rtoml
         ({'x': {'a': 1}, 'y': 4}, 'y = 4\n\n[x]\na = 1\n'),
         ((1, 2, 3), '[1, 2, 3]'),
         ({'emoji': '😷'}, 'emoji = "😷"\n'),
+        ({'bytes': b'123'}, 'bytes = [49, 50, 51]\n'),  # TODO: should this be a string of "123"
         ({'polish': 'Witaj świecie'}, 'polish = "Witaj świecie"\n'),
     ],
 )
