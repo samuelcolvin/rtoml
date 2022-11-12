@@ -25,11 +25,11 @@ impl<'py> SerializePyObject<'py> {
         }
     }
 
-    fn with_obj(&self, obj: &'py PyAny, none_value: &'py str) -> Self {
+    fn with_obj(&self, obj: &'py PyAny) -> Self {
         Self {
             obj,
             py: self.py,
-            none_value,
+            none_value: self.none_value,
             ob_type_lookup: self.ob_type_lookup,
         }
     }
@@ -92,17 +92,17 @@ impl<'py> Serialize for SerializePyObject<'py> {
             let mut map = serializer.serialize_map(Some(len))?;
             for (k, v) in simple_items {
                 let key = table_key(k)?;
-                let value = self.with_obj(v, self.none_value);
+                let value = self.with_obj(v);
                 map.serialize_entry(key, &value)?;
             }
             for (k, v) in array_items {
                 let key = table_key(k)?;
-                let value = self.with_obj(v, self.none_value);
+                let value = self.with_obj(v);
                 map.serialize_entry(key, &value)?;
             }
             for (k, v) in dict_items {
                 let key = table_key(k)?;
-                let value = self.with_obj(v, self.none_value);
+                let value = self.with_obj(v);
                 map.serialize_entry(key, &value)?;
             }
             map.end()
@@ -110,14 +110,14 @@ impl<'py> Serialize for SerializePyObject<'py> {
             let py_list: &PyList = self.obj.cast_as().map_err(map_py_err)?;
             let mut seq = serializer.serialize_seq(Some(py_list.len()))?;
             for element in py_list {
-                seq.serialize_element(&self.with_obj(element, self.none_value))?
+                seq.serialize_element(&self.with_obj(element))?
             }
             seq.end()
         } else if ob_type == lookup.tuple {
             let py_tuple: &PyTuple = self.obj.cast_as().map_err(map_py_err)?;
             let mut seq = serializer.serialize_seq(Some(py_tuple.len()))?;
             for element in py_tuple {
-                seq.serialize_element(&self.with_obj(element, self.none_value))?
+                seq.serialize_element(&self.with_obj(element))?
             }
             seq.end()
         } else if ob_type == lookup.datetime {

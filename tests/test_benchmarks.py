@@ -129,9 +129,7 @@ def test_data():
 @pytest.mark.benchmark(group='load-data.toml')
 def test_loads_data_toml(benchmark):
     data_toml_str = data_toml_path.read_text()
-    # benchmark(rtoml.loads, data_toml_bytes, name='loads-bytes')
     benchmark(rtoml.loads, data_toml_str)
-    # benchmark(rtoml.load, data_toml_path, name='load-path')
 
 
 @pytest.mark.benchmark(group='load-data.toml')
