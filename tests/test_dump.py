@@ -64,3 +64,13 @@ def test_dump_file(tmp_path):
 
 def test_varied_list():
     assert rtoml.dumps({'test': [1, '2']}) == 'test = [1, "2"]\n'
+
+
+def test_none():
+    assert rtoml.dumps({'test': None}) == 'test = "null"\n'
+    assert rtoml.dumps({'test': None}, none="None") == 'test = "None"\n'
+
+    # Reproducible with the same none repr
+    s = 'x = "py:None"\n'
+    assert rtoml.loads(s, none="py:None") == {'x': None}
+    assert rtoml.dumps({'x': None}, none="py:None") == s

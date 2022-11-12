@@ -234,3 +234,8 @@ def test_none():
     assert rtoml.loads('x = "null"', none="null") == {'x': None}
     assert rtoml.loads('x = "null"', none="") == {'x': "null"}
     assert rtoml.loads('x = ""', none="") == {'x': None}
+
+    # Reproducible with the same none repr
+    s = {'x': None}
+    assert rtoml.dumps(s, none="py:None") == 'x = "py:None"\n'
+    assert rtoml.loads('x = "py:None"\n', none="py:None") == s
