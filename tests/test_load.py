@@ -229,7 +229,7 @@ smooth = true
         rtoml.loads(s)
 
 
-def test_none():
+def test_none_value():
     assert rtoml.loads('x = "null"') == {'x': 'null'}
     assert rtoml.loads('x = "null"', none_value='null') == {'x': None}
     assert rtoml.loads('x = "null"', none_value='') == {'x': 'null'}

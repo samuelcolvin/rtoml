@@ -66,7 +66,7 @@ def test_varied_list():
     assert rtoml.dumps({'test': [1, '2']}) == 'test = [1, "2"]\n'
 
 
-def test_none():
+def test_none_value():
     assert rtoml.dumps({'test': None}) == 'test = "null"\n'
     assert rtoml.dumps({'test': None}, none_value='None') == 'test = "None"\n'
 
@@ -81,10 +81,10 @@ def test_omit_none():
     assert rtoml.dumps({'test': [1, None, 2]}, omit_none=True) == 'test = [1, 2]\n'
     assert rtoml.dumps({'test': (1, None, 2)}, omit_none=True) == 'test = [1, 2]\n'
     assert (
-        rtoml.dumps({'test': {'x': [None, {'y': [1, None, 2]}], 'z': None}}, omit_none=True)
+        rtoml.dumps({'test': {'x': [{'y': [1, None, 2]}], 'z': None}}, omit_none=True)
         == '[[test.x]]\ny = [1, 2]\n'
     )
     assert (
-        rtoml.dumps({'test': {'x': [None, {'y': [1, None, 2]}], 'z': None}}, omit_none=False)
-        == '[test]\nz = "null"\nx = ["null"\n[[test.x]]\ny = [1, "null", 2]\n]\n'
+        rtoml.dumps({'test': {'x': [{'y': [1, None, 2]}], 'z': None}}, omit_none=False)
+        == '[test]\nz = "null"\n\n[[test.x]]\ny = [1, "null", 2]\n'
     )
