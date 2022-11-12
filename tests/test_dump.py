@@ -74,3 +74,17 @@ def test_none():
     s = 'x = "py:None"\n'
     assert rtoml.loads(s, none_value='py:None') == {'x': None}
     assert rtoml.dumps({'x': None}, none_value='py:None') == s
+
+
+def test_omit_none():
+    assert rtoml.dumps({'test': None}, omit_none=True) == ''
+    assert rtoml.dumps({'test': [1, None, 2]}, omit_none=True) == 'test = [1, 2]\n'
+    assert rtoml.dumps({'test': (1, None, 2)}, omit_none=True) == 'test = [1, 2]\n'
+    assert (
+        rtoml.dumps({'test': {'x': [None, {'y': [1, None, 2]}], 'z': None}}, omit_none=True)
+        == '[[test.x]]\ny = [1, 2]\n'
+    )
+    assert (
+        rtoml.dumps({'test': {'x': [None, {'y': [1, None, 2]}], 'z': None}}, omit_none=False)
+        == '[test]\nz = "null"\nx = ["null"\n[[test.x]]\ny = [1, "null", 2]\n]\n'
+    )
