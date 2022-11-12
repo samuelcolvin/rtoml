@@ -20,11 +20,12 @@ pub type NoHashSet<T> = HashSet<T, BuildNoHashHasher<T>>;
 
 pub struct PyDeserializer<'py> {
     py: Python<'py>,
+    none: &'py str,
 }
 
 impl<'py> PyDeserializer<'py> {
-    pub fn new(py: Python<'py>) -> Self {
-        Self { py }
+    pub fn new(py: Python<'py>, none: &'py str) -> Self {
+        Self { py, none }
     }
 }
 
@@ -78,7 +79,11 @@ impl<'de, 'py> Visitor<'de> for PyDeserializer<'py> {
     where
         E: de::Error,
     {
-        Ok(value.to_object(self.py))
+        if value == self.none {
+            Ok(self.py.None())
+        } else {
+            Ok(value.to_object(self.py))
+        }
     }
 
     fn visit_unit<E>(self) -> Result<Self::Value, E> {
@@ -91,7 +96,7 @@ impl<'de, 'py> Visitor<'de> for PyDeserializer<'py> {
     {
         let mut elements = Vec::new();
 
-        while let Some(elem) = seq.next_element_seed(PyDeserializer::new(self.py))? {
+        while let Some(elem) = seq.next_element_seed(PyDeserializer::new(self.py, self.none))? {
             elements.push(elem);
         }
 
@@ -102,7 +107,7 @@ impl<'de, 'py> Visitor<'de> for PyDeserializer<'py> {
     where
         A: MapAccess<'de>,
     {
-        match map_access.next_entry_seed(PhantomData::<String>, PyDeserializer::new(self.py))? {
+        match map_access.next_entry_seed(PhantomData::<String>, PyDeserializer::new(self.py, self.none))? {
             Some((first_key, first_value)) if first_key == DATETIME_MAPPING_KEY => {
                 let py_string = first_value.extract::<&str>(self.py).map_err(de::Error::custom)?;
                 let dt: TomlDatetime = TomlDatetime::from_str(py_string).map_err(de::Error::custom)?;
@@ -119,7 +124,7 @@ impl<'de, 'py> Visitor<'de> for PyDeserializer<'py> {
                 dict.set_item(first_key, first_value).map_err(de::Error::custom)?;
 
                 while let Some((key, value)) =
-                    map_access.next_entry_seed(PhantomData::<String>, PyDeserializer::new(self.py))?
+                    map_access.next_entry_seed(PhantomData::<String>, PyDeserializer::new(self.py, self.none))?
                 {
                     if key_set.insert(hash_builder.hash_one(&key)) {
                         dict.set_item(key, value).map_err(de::Error::custom)?;

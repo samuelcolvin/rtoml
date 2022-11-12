@@ -20,9 +20,9 @@ create_exception!(_rtoml, TomlParsingError, PyValueError);
 create_exception!(_rtoml, TomlSerializationError, PyValueError);
 
 #[pyfunction]
-fn deserialize(py: Python, toml_data: String) -> PyResult<PyObject> {
+fn deserialize(py: Python, toml_data: String, none: String) -> PyResult<PyObject> {
     let mut deserializer = Deserializer::new(&toml_data);
-    let seed = de::PyDeserializer::new(py);
+    let seed = de::PyDeserializer::new(py, &none);
     seed.deserialize(&mut deserializer)
         .map_err(|e| TomlParsingError::new_err(e.to_string()))
 }
