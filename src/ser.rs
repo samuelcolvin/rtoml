@@ -11,25 +11,25 @@ use crate::py_type::PyTypeLookup;
 pub struct SerializePyObject<'py> {
     obj: &'py PyAny,
     py: Python<'py>,
-    none: &'py str,
+    none_value: &'py str,
     ob_type_lookup: &'py PyTypeLookup,
 }
 
 impl<'py> SerializePyObject<'py> {
-    pub fn new(py: Python<'py>, obj: &'py PyAny, none: &'py str) -> Self {
+    pub fn new(py: Python<'py>, obj: &'py PyAny, none_value: &'py str) -> Self {
         Self {
             obj,
             py,
-            none,
+            none_value,
             ob_type_lookup: PyTypeLookup::cached(py),
         }
     }
 
-    fn with_obj(&self, obj: &'py PyAny, none: &'py str) -> Self {
+    fn with_obj(&self, obj: &'py PyAny, none_value: &'py str) -> Self {
         Self {
             obj,
             py: self.py,
-            none,
+            none_value,
             ob_type_lookup: self.ob_type_lookup,
         }
     }
@@ -60,7 +60,7 @@ impl<'py> Serialize for SerializePyObject<'py> {
         // ugly but this seems to be just marginally faster than a guarded match, also allows for custom cases
         // if we wanted to add them
         if ob_type == lookup.none {
-            serializer.serialize_str(self.none)
+            serializer.serialize_str(self.none_value)
         } else if ob_type == lookup.int {
             serialize!(i64)
         } else if ob_type == lookup.bool {
@@ -92,17 +92,17 @@ impl<'py> Serialize for SerializePyObject<'py> {
             let mut map = serializer.serialize_map(Some(len))?;
             for (k, v) in simple_items {
                 let key = table_key(k)?;
-                let value = self.with_obj(v, self.none);
+                let value = self.with_obj(v, self.none_value);
                 map.serialize_entry(key, &value)?;
             }
             for (k, v) in array_items {
                 let key = table_key(k)?;
-                let value = self.with_obj(v, self.none);
+                let value = self.with_obj(v, self.none_value);
                 map.serialize_entry(key, &value)?;
             }
             for (k, v) in dict_items {
                 let key = table_key(k)?;
-                let value = self.with_obj(v, self.none);
+                let value = self.with_obj(v, self.none_value);
                 map.serialize_entry(key, &value)?;
             }
             map.end()
@@ -110,14 +110,14 @@ impl<'py> Serialize for SerializePyObject<'py> {
             let py_list: &PyList = self.obj.cast_as().map_err(map_py_err)?;
             let mut seq = serializer.serialize_seq(Some(py_list.len()))?;
             for element in py_list {
-                seq.serialize_element(&self.with_obj(element, self.none))?
+                seq.serialize_element(&self.with_obj(element, self.none_value))?
             }
             seq.end()
         } else if ob_type == lookup.tuple {
             let py_tuple: &PyTuple = self.obj.cast_as().map_err(map_py_err)?;
             let mut seq = serializer.serialize_seq(Some(py_tuple.len()))?;
             for element in py_tuple {
-                seq.serialize_element(&self.with_obj(element, self.none))?
+                seq.serialize_element(&self.with_obj(element, self.none_value))?
             }
             seq.end()
         } else if ob_type == lookup.datetime {

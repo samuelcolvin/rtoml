@@ -231,11 +231,11 @@ smooth = true
 
 def test_none():
     assert rtoml.loads('x = "null"') == {'x': 'null'}
-    assert rtoml.loads('x = "null"', none='null') == {'x': None}
-    assert rtoml.loads('x = "null"', none='') == {'x': 'null'}
-    assert rtoml.loads('x = ""', none='') == {'x': None}
+    assert rtoml.loads('x = "null"', none_value='null') == {'x': None}
+    assert rtoml.loads('x = "null"', none_value='') == {'x': 'null'}
+    assert rtoml.loads('x = ""', none_value='') == {'x': None}
 
-    # Reproducible with the same none repr
+    # Reproducible with the same none_value repr
     s = {'x': None}
-    assert rtoml.dumps(s, none='py:None') == 'x = "py:None"\n'
-    assert rtoml.loads('x = "py:None"\n', none='py:None') == s
+    assert rtoml.dumps(s, none_value='py:None') == 'x = "py:None"\n'
+    assert rtoml.loads('x = "py:None"\n', none_value='py:None') == s

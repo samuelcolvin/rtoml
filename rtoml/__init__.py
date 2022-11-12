@@ -1,6 +1,6 @@
 from io import TextIOBase
 from pathlib import Path
-from typing import Any, Dict, TextIO, Union
+from typing import Any, Dict, Optional, TextIO, Union
 
 from . import _rtoml
 
@@ -13,7 +13,7 @@ TomlParsingError = _rtoml.TomlParsingError
 TomlSerializationError = _rtoml.TomlSerializationError
 
 
-def load(toml: Union[str, Path, TextIO], *, none: str = "\r") -> Dict[str, Any]:
+def load(toml: Union[str, Path, TextIO], *, none_value: Optional[str] = None) -> Dict[str, Any]:
     """
     Parse TOML via a string or file and return a python dict. The `toml` argument may be a `str`,
     `Path` or file object from `open()`.
@@ -23,19 +23,19 @@ def load(toml: Union[str, Path, TextIO], *, none: str = "\r") -> Dict[str, Any]:
     elif isinstance(toml, (TextIOBase, TextIO)):
         toml = toml.read()
 
-    return loads(toml, none=none)
+    return loads(toml, none_value=none_value)
 
 
-def loads(toml: str, *, none: str = "\r") -> Dict[str, Any]:
+def loads(toml: str, *, none_value: Optional[str] = None) -> Dict[str, Any]:
     """
     Parse a TOML string and return a python dict. (provided to match the interface of `json` and similar libraries)
     """
     if not isinstance(toml, str):
         raise TypeError(f'invalid toml input, must be str not {type(toml)}')
-    return _rtoml.deserialize(toml, none=none)
+    return _rtoml.deserialize(toml, none_value=none_value)
 
 
-def dumps(obj: Any, *, pretty: bool = False, none: str = "null") -> str:
+def dumps(obj: Any, *, pretty: bool = False, none_value: str = "null") -> str:
     """
     Serialize a python object to TOML.
 
@@ -46,16 +46,16 @@ def dumps(obj: Any, *, pretty: bool = False, none: str = "null") -> str:
     else:
         serialize = _rtoml.serialize
 
-    return serialize(obj, none=none)
+    return serialize(obj, none_value=none_value)
 
 
-def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False, none: str = "null") -> int:
+def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False, none_value: str = "null") -> int:
     """
     Serialize a python object to TOML and write it to a file. `file` may be a `Path` or file object from `open()`.
 
     If `pretty` is true, output has a more "pretty" format.
     """
-    s = dumps(obj, pretty=pretty, none=none)
+    s = dumps(obj, pretty=pretty, none_value=none_value)
     if isinstance(file, Path):
         return file.write_text(s, encoding='UTF-8')
     else:
