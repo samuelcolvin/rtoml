@@ -80,10 +80,7 @@ def test_omit_none():
     assert rtoml.dumps({'test': None}, omit_none=True) == ''
     assert rtoml.dumps({'test': [1, None, 2]}, omit_none=True) == 'test = [1, 2]\n'
     assert rtoml.dumps({'test': (1, None, 2)}, omit_none=True) == 'test = [1, 2]\n'
-    assert (
-        rtoml.dumps({'test': {'x': [{'y': [1, None, 2]}], 'z': None}}, omit_none=True)
-        == '[[test.x]]\ny = [1, 2]\n'
-    )
+    assert rtoml.dumps({'test': {'x': [{'y': [1, None, 2]}], 'z': None}}, omit_none=True) == '[[test.x]]\ny = [1, 2]\n'
     assert (
         rtoml.dumps({'test': {'x': [{'y': [1, None, 2]}], 'z': None}}, omit_none=False)
         == '[test]\nz = "null"\n\n[[test.x]]\ny = [1, "null", 2]\n'
