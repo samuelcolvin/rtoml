@@ -93,17 +93,17 @@ impl<'py> Serialize for SerializePyObject<'py> {
             }
             let mut map = serializer.serialize_map(Some(len))?;
             for (k, v) in simple_items {
-                let key = table_key(k)?;
+                let key = table_key(k, self.none_value)?;
                 let value = self.with_obj(v);
                 map.serialize_entry(key, &value)?;
             }
             for (k, v) in array_items {
-                let key = table_key(k)?;
+                let key = table_key(k, self.none_value)?;
                 let value = self.with_obj(v);
                 map.serialize_entry(key, &value)?;
             }
             for (k, v) in dict_items {
-                let key = table_key(k)?;
+                let key = table_key(k, self.none_value)?;
                 let value = self.with_obj(v);
                 map.serialize_entry(key, &value)?;
             }
@@ -162,11 +162,11 @@ fn map_py_err<I: fmt::Display, O: SerError>(err: I) -> O {
     O::custom(err.to_string())
 }
 
-fn table_key<E: SerError>(key: &PyAny) -> Result<&str, E> {
+fn table_key<'a, E: SerError>(key: &'a PyAny, none_value: Option<&'a str>) -> Result<&'a str, E> {
     if let Ok(py_string) = key.cast_as::<PyString>() {
         py_string.to_str().map_err(map_py_err)
     } else if key.is_none() {
-        Ok("null")
+        Ok(none_value.unwrap())
     } else if let Ok(key) = key.extract::<bool>() {
         Ok(if key { "true" } else { "false" })
     } else {
