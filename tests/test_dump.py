@@ -20,12 +20,21 @@ import rtoml
         ({'x': {'a': 1}, 'y': 4}, 'y = 4\n\n[x]\na = 1\n'),
         ((1, 2, 3), '[1, 2, 3]'),
         ({'emoji': '😷'}, 'emoji = "😷"\n'),
-        ({'bytes': b'123'}, 'bytes = [49, 50, 51]\n'),  # TODO: should this be a string of "123"
         ({'polish': 'Witaj świecie'}, 'polish = "Witaj świecie"\n'),
+        ({'bytes': b'hello'}, 'bytes = "hello"\n'),
+        ({'bytes': b'\xf0\x9f\x98\xb7'}, 'bytes = "😷"\n'),
+        ({'bytes': b'\x00\x01\x02'}, 'bytes = "\\u0000\\u0001\\u0002"\n'),
+        ({'bytes': bytearray(b'hello')}, 'bytes = "hello"\n'),
     ],
 )
 def test_dumps(input_obj, output_toml):
     assert rtoml.dumps(input_obj) == output_toml
+
+
+@pytest.mark.parametrize('input_value', [b'\x81', bytearray(b'\x81')])
+def test_utf8_error(input_value):
+    with pytest.raises(rtoml.TomlSerializationError, match='invalid utf-8 sequence of 1 bytes from index 0'):
+        rtoml.dumps({'bytes': input_value})
 
 
 @pytest.mark.parametrize(
