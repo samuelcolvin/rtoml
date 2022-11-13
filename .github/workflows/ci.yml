@@ -138,6 +138,12 @@ jobs:
           - os: ubuntu
             target: armv7
             container: messense/manylinux_2_24-cross:armv7
+          - os: ubuntu
+            target: ppc64le
+            container: messense/manylinux_2_24-cross:ppc64le
+          - os: ubuntu
+            target: s390x
+            container: messense/manylinux_2_24-cross:s390x
           # musllinux
           - os: ubuntu
             target: x86_64
