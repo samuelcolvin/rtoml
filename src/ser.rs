@@ -11,18 +11,16 @@ use crate::py_type::PyTypeLookup;
 pub struct SerializePyObject<'py> {
     obj: &'py PyAny,
     py: Python<'py>,
-    none_value: &'py str,
-    omit_none: bool,
+    none_value: Option<&'py str>,
     ob_type_lookup: &'py PyTypeLookup,
 }
 
 impl<'py> SerializePyObject<'py> {
-    pub fn new(py: Python<'py>, obj: &'py PyAny, none_value: &'py str, omit_none: bool) -> Self {
+    pub fn new(py: Python<'py>, obj: &'py PyAny, none_value: Option<&'py str>) -> Self {
         Self {
             obj,
             py,
             none_value,
-            omit_none,
             ob_type_lookup: PyTypeLookup::cached(py),
         }
     }
@@ -32,7 +30,6 @@ impl<'py> SerializePyObject<'py> {
             obj,
             py: self.py,
             none_value: self.none_value,
-            omit_none: self.omit_none,
             ob_type_lookup: self.ob_type_lookup,
         }
     }
@@ -63,7 +60,7 @@ impl<'py> Serialize for SerializePyObject<'py> {
         // ugly but this seems to be just marginally faster than a guarded match, also allows for custom cases
         // if we wanted to add them
         if ob_type == lookup.none {
-            serializer.serialize_str(self.none_value)
+            serializer.serialize_str(self.none_value.unwrap())
         } else if ob_type == lookup.int {
             serialize!(i64)
         } else if ob_type == lookup.bool {
@@ -84,7 +81,7 @@ impl<'py> Serialize for SerializePyObject<'py> {
 
             for (k, v) in py_dict {
                 let v_ob_type = v.get_type_ptr() as usize;
-                if v_ob_type == lookup.none && self.omit_none {
+                if self.none_value.is_none() && (v_ob_type == lookup.none || k.is_none()) {
                     continue;
                 } else if v_ob_type == lookup.dict {
                     dict_items.push((k, v));
@@ -98,28 +95,16 @@ impl<'py> Serialize for SerializePyObject<'py> {
             for (k, v) in simple_items {
                 let key = table_key(k)?;
                 let value = self.with_obj(v);
-                let v_ob_type = v.get_type_ptr() as usize;
-                if v_ob_type == lookup.none && self.omit_none {
-                    continue;
-                }
                 map.serialize_entry(key, &value)?;
             }
             for (k, v) in array_items {
                 let key = table_key(k)?;
                 let value = self.with_obj(v);
-                let v_ob_type = v.get_type_ptr() as usize;
-                if v_ob_type == lookup.none && self.omit_none {
-                    continue;
-                }
                 map.serialize_entry(key, &value)?;
             }
             for (k, v) in dict_items {
                 let key = table_key(k)?;
                 let value = self.with_obj(v);
-                let v_ob_type = v.get_type_ptr() as usize;
-                if v_ob_type == lookup.none && self.omit_none {
-                    continue;
-                }
                 map.serialize_entry(key, &value)?;
             }
             map.end()
@@ -127,8 +112,7 @@ impl<'py> Serialize for SerializePyObject<'py> {
             let py_list: &PyList = self.obj.cast_as().map_err(map_py_err)?;
             let mut seq = serializer.serialize_seq(Some(py_list.len()))?;
             for element in py_list {
-                let v_ob_type = element.get_type_ptr() as usize;
-                if v_ob_type == lookup.none && self.omit_none {
+                if self.none_value.is_none() && element.is_none() {
                     continue;
                 }
                 seq.serialize_element(&self.with_obj(element))?
@@ -138,8 +122,7 @@ impl<'py> Serialize for SerializePyObject<'py> {
             let py_tuple: &PyTuple = self.obj.cast_as().map_err(map_py_err)?;
             let mut seq = serializer.serialize_seq(Some(py_tuple.len()))?;
             for element in py_tuple {
-                let v_ob_type = element.get_type_ptr() as usize;
-                if v_ob_type == lookup.none && self.omit_none {
+                if self.none_value.is_none() && element.is_none() {
                     continue;
                 }
                 seq.serialize_element(&self.with_obj(element))?

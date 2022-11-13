@@ -28,8 +28,8 @@ fn deserialize(py: Python, toml_data: String, none_value: Option<&str>) -> PyRes
 }
 
 #[pyfunction]
-fn serialize(py: Python, obj: &PyAny, none_value: &str, omit_none: bool) -> PyResult<String> {
-    let s = SerializePyObject::new(py, obj, none_value, omit_none);
+fn serialize(py: Python, obj: &PyAny, none_value: Option<&str>) -> PyResult<String> {
+    let s = SerializePyObject::new(py, obj, none_value);
     match to_toml_string(&s) {
         Ok(s) => Ok(s),
         Err(e) => Err(TomlSerializationError::new_err(e.to_string())),
@@ -37,8 +37,8 @@ fn serialize(py: Python, obj: &PyAny, none_value: &str, omit_none: bool) -> PyRe
 }
 
 #[pyfunction]
-fn serialize_pretty(py: Python, obj: &PyAny, none_value: &str, omit_none: bool) -> PyResult<String> {
-    let s = SerializePyObject::new(py, obj, none_value, omit_none);
+fn serialize_pretty(py: Python, obj: &PyAny, none_value: Option<&str>) -> PyResult<String> {
+    let s = SerializePyObject::new(py, obj, none_value);
     match to_toml_string_pretty(&s) {
         Ok(s) => Ok(s),
         Err(e) => Err(TomlSerializationError::new_err(e.to_string())),
