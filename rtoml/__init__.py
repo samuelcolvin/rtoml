@@ -15,8 +15,12 @@ TomlSerializationError = _rtoml.TomlSerializationError
 
 def load(toml: Union[str, Path, TextIO], *, none_value: Optional[str] = None) -> Dict[str, Any]:
     """
-    Parse TOML via a string or file and return a python dict. The `toml` argument may be a `str`,
-    `Path` or file object from `open()`.
+    Parse TOML via a string or file and return a python dict.
+
+    Args:
+        toml: a `str`, `Path` or file object from `open()`.
+        none_value: controlling which value in `toml` is loaded as `None` in python.
+            By default, `none_value` is `None`, which means nothing is loaded as `None`.
     """
     if isinstance(toml, Path):
         toml = toml.read_text(encoding='UTF-8')
@@ -29,6 +33,11 @@ def load(toml: Union[str, Path, TextIO], *, none_value: Optional[str] = None) ->
 def loads(toml: str, *, none_value: Optional[str] = None) -> Dict[str, Any]:
     """
     Parse a TOML string and return a python dict. (provided to match the interface of `json` and similar libraries)
+
+    Args:
+        toml: a `str` containing TOML.
+        none_value: controlling which value in `toml` is loaded as `None` in python.
+            By default, `none_value` is `None`, which means nothing is loaded as `None`.
     """
     if not isinstance(toml, str):
         raise TypeError(f'invalid toml input, must be str not {type(toml)}')
@@ -39,7 +48,11 @@ def dumps(obj: Any, *, pretty: bool = False, none_value: Optional[str] = "null")
     """
     Serialize a python object to TOML.
 
-    If `pretty` is true, output has a more "pretty" format.
+    Args:
+        obj: a python object to be serialized.
+        pretty: if true, output has a more "pretty" format.
+        none_value: controlling how `None` values in `obj` are serialized.
+            `none_value=None` means `None` values are ignored.
     """
     if pretty:
         serialize = _rtoml.serialize_pretty
@@ -51,9 +64,14 @@ def dumps(obj: Any, *, pretty: bool = False, none_value: Optional[str] = "null")
 
 def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False, none_value: Optional[str] = "null") -> int:
     """
-    Serialize a python object to TOML and write it to a file. `file` may be a `Path` or file object from `open()`.
+    Serialize a python object to TOML and write it to a file.
 
-    If `pretty` is true, output has a more "pretty" format.
+    Args:
+        obj: a python object to be serialized.
+        file: a `Path` or file object from `open()`.
+        pretty: if `True` the output has a more "pretty" format.
+        none_value: controlling how `None` values in `obj` are serialized.
+            `none_value=None` means `None` values are ignored.
     """
     s = dumps(obj, pretty=pretty, none_value=none_value)
     if isinstance(file, Path):
