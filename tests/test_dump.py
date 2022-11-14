@@ -64,3 +64,32 @@ def test_dump_file(tmp_path):
 
 def test_varied_list():
     assert rtoml.dumps({'test': [1, '2']}) == 'test = [1, "2"]\n'
+
+
+@pytest.mark.parametrize(
+    'input_obj, none_value, output_toml',
+    [
+        ({'test': None}, 'null', 'test = "null"\n'),
+        ({'test': None}, 'foo', 'test = "foo"\n'),
+        ({'test': None}, None, ''),
+        ({None: 'test'}, 'null', 'null = "test"\n'),
+        ({None: 'test'}, 'foo', 'foo = "test"\n'),
+        ({None: 'test'}, None, ''),
+        ({'test': [1, None, 2]}, 'null', 'test = [1, "null", 2]\n'),
+        ({'test': [1, None, 2]}, 'foo', 'test = [1, "foo", 2]\n'),
+        ({'test': [1, None, 2]}, None, 'test = [1, 2]\n'),
+        (
+            {'test': {'x': [{'y': [1, None, 2]}], 'z': None}},
+            'null',
+            '[test]\nz = "null"\n\n[[test.x]]\ny = [1, "null", 2]\n',
+        ),
+        (
+            {'test': {'x': [{'y': [1, None, 2]}], 'z': None}},
+            'foo',
+            '[test]\nz = "foo"\n\n[[test.x]]\ny = [1, "foo", 2]\n',
+        ),
+        ({'test': {'x': [{'y': [1, None, 2]}], 'z': None}}, None, '[[test.x]]\ny = [1, 2]\n'),
+    ],
+)
+def test_none_value(input_obj, none_value, output_toml):
+    assert rtoml.dumps(input_obj, none_value=none_value) == output_toml
