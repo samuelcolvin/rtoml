@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=0.13,<0.14"]
+requires = ["maturin>=0.14,<0.15"]
 build-backend = "maturin"
 
 [project]
@@ -43,7 +43,6 @@ Source = "https://github.com/samuelcolvin/rtoml"
 
 [tool.maturin]
 bindings = "pyo3"
-sdist-include = ["Cargo.lock"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
