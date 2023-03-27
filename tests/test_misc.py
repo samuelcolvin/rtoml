@@ -22,13 +22,13 @@ def test_version():
 
 
 @pytest.mark.parametrize(
-    "dt",
+    'dt',
     [
         # passes, for 6 significant subsecond digits
-        "2020-05-25T12:00:01.123456",
+        '2020-05-25T12:00:01.123456',
         # previously failed because last subsecond digit is not dumped to string
         # and load parsing fails with only 5 fractional digits
-        "2020-05-25T12:00:01.123450",
+        '2020-05-25T12:00:01.123450',
     ],
 )
 def test_datetime_precision(dt):
