@@ -1,6 +1,7 @@
 use std::fmt;
 use std::str::FromStr;
 
+use pyo3::ffi::PyTypeObject;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDate, PyDateTime, PyDict, PyList, PyString, PyTime, PyTuple};
 use serde::ser::{Error as SerError, Serialize, SerializeMap, SerializeSeq, Serializer};
@@ -38,6 +39,73 @@ macro_rules! serde_err {
     };
 }
 
+// Copied from pydantic-core:
+// https://github.com/pydantic/pydantic-core/blob/40b72a37908ce352b5e8efb6d8a22bfb2a48be60/src/serializers/ob_type.rs#LL273C8-L273C8
+pub enum ObType {
+    None,
+    // numeric types
+    Int,
+    Bool,
+    Float,
+    // string types
+    Str,
+    Bytes,
+    Bytearray,
+    // sequence types
+    List,
+    Tuple,
+    // Set,
+    // Frozenset,
+    // mapping types
+    Dict,
+    // datetime types
+    Datetime,
+    Date,
+    Time,
+    // Timedelta,
+    // unknown type
+    Unknown,
+}
+
+fn get_ob_type(type_ptr: *mut PyTypeObject, lookup: &PyTypeLookup) -> ObType {
+    let ob_type = type_ptr as usize;
+
+    if ob_type == lookup.none {
+        ObType::None
+    } else if ob_type == lookup.int {
+        ObType::Int
+    } else if ob_type == lookup.bool {
+        ObType::Bool
+    } else if ob_type == lookup.float {
+        ObType::Float
+    } else if ob_type == lookup.string {
+        ObType::Str
+    } else if ob_type == lookup.dict {
+        ObType::Dict
+    } else if ob_type == lookup.list {
+        ObType::List
+    } else if ob_type == lookup.tuple {
+        ObType::Tuple
+    } else if ob_type == lookup.datetime {
+        ObType::Datetime
+    } else if ob_type == lookup.date {
+        ObType::Date
+    } else if ob_type == lookup.time {
+        ObType::Time
+    } else if ob_type == lookup.bytes {
+        ObType::Bytes
+    } else if ob_type == lookup.bytearray {
+        ObType::Bytearray
+    } else {
+        let base_type_ptr = unsafe { (*type_ptr).tp_base };
+        if base_type_ptr.is_null() {
+            ObType::Unknown
+        } else {
+            get_ob_type(base_type_ptr, lookup)
+        }
+    }
+}
+
 impl<'py> Serialize for SerializePyObject<'py> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -53,96 +121,98 @@ impl<'py> Serialize for SerializePyObject<'py> {
         }
 
         let lookup = self.ob_type_lookup;
-        let ob_type = self.obj.get_type_ptr() as usize;
+        let ob_type = get_ob_type(self.obj.get_type_ptr(), lookup);
         // ugly but this seems to be just marginally faster than a guarded match, also allows for custom cases
         // if we wanted to add them
-        if ob_type == lookup.none {
-            serializer.serialize_str("null")
-        } else if ob_type == lookup.int {
-            serialize!(i64)
-        } else if ob_type == lookup.bool {
-            serialize!(bool)
-        } else if ob_type == lookup.float {
-            serialize!(f64)
-        } else if ob_type == lookup.string {
-            let py_str: &PyString = self.obj.cast_as().map_err(map_py_err)?;
-            let s = py_str.to_str().map_err(map_py_err)?;
-            serializer.serialize_str(s)
-        } else if ob_type == lookup.dict {
-            let py_dict: &PyDict = self.obj.cast_as().map_err(map_py_err)?;
+        match ob_type {
+            ObType::None => serializer.serialize_str("null"),
+            ObType::Int => serialize!(i64),
+            ObType::Bool => serialize!(bool),
+            ObType::Float => serialize!(f64),
+            ObType::Str => {
+                let py_str: &PyString = self.obj.cast_as().map_err(map_py_err)?;
+                let s = py_str.to_str().map_err(map_py_err)?;
+                serializer.serialize_str(s)
+            }
+            ObType::Bytes | ObType::Bytearray => serialize!(&[u8]),
+            ObType::List => {
+                let py_list: &PyList = self.obj.cast_as().map_err(map_py_err)?;
+                let mut seq = serializer.serialize_seq(Some(py_list.len()))?;
+                for element in py_list {
+                    seq.serialize_element(&self.with_obj(element))?
+                }
+                seq.end()
+            }
+            ObType::Tuple => {
+                let py_tuple: &PyTuple = self.obj.cast_as().map_err(map_py_err)?;
+                let mut seq = serializer.serialize_seq(Some(py_tuple.len()))?;
+                for element in py_tuple {
+                    seq.serialize_element(&self.with_obj(element))?
+                }
+                seq.end()
+            }
+            ObType::Dict => {
+                let py_dict: &PyDict = self.obj.cast_as().map_err(map_py_err)?;
 
-            let len = py_dict.len();
-            let mut simple_items: Vec<(&PyAny, &PyAny)> = Vec::with_capacity(len);
-            let mut array_items: Vec<(&PyAny, &PyAny)> = Vec::with_capacity(len);
-            let mut dict_items: Vec<(&PyAny, &PyAny)> = Vec::with_capacity(len);
+                let len = py_dict.len();
+                let mut simple_items: Vec<(&PyAny, &PyAny)> = Vec::with_capacity(len);
+                let mut array_items: Vec<(&PyAny, &PyAny)> = Vec::with_capacity(len);
+                let mut dict_items: Vec<(&PyAny, &PyAny)> = Vec::with_capacity(len);
 
-            for (k, v) in py_dict {
-                let v_ob_type = v.get_type_ptr() as usize;
-                if v_ob_type == lookup.dict {
-                    dict_items.push((k, v));
-                } else if v_ob_type == lookup.list || v_ob_type == lookup.tuple {
-                    array_items.push((k, v));
-                } else {
-                    simple_items.push((k, v));
+                for (k, v) in py_dict {
+                    let v_ob_type = v.get_type_ptr() as usize;
+                    if v_ob_type == lookup.dict {
+                        dict_items.push((k, v));
+                    } else if v_ob_type == lookup.list || v_ob_type == lookup.tuple {
+                        array_items.push((k, v));
+                    } else {
+                        simple_items.push((k, v));
+                    }
+                }
+                let mut map = serializer.serialize_map(Some(len))?;
+                for (k, v) in simple_items {
+                    let key = table_key(k)?;
+                    let value = self.with_obj(v);
+                    map.serialize_entry(key, &value)?;
+                }
+                for (k, v) in array_items {
+                    let key = table_key(k)?;
+                    let value = self.with_obj(v);
+                    map.serialize_entry(key, &value)?;
+                }
+                for (k, v) in dict_items {
+                    let key = table_key(k)?;
+                    let value = self.with_obj(v);
+                    map.serialize_entry(key, &value)?;
+                }
+                map.end()
+            }
+            ObType::Datetime => {
+                let py_dt: &PyDateTime = self.obj.cast_as().map_err(map_py_err)?;
+                let dt_str = py_dt.str().map_err(map_py_err)?.to_str().map_err(map_py_err)?;
+                let iso_str = dt_str.replacen("+00:00", "Z", 1);
+                match Datetime::from_str(&iso_str) {
+                    Ok(dt) => dt.serialize(serializer),
+                    Err(e) => serde_err!("unable to convert datetime string to TOML datetime object {:?}", e),
                 }
             }
-            let mut map = serializer.serialize_map(Some(len))?;
-            for (k, v) in simple_items {
-                let key = table_key(k)?;
-                let value = self.with_obj(v);
-                map.serialize_entry(key, &value)?;
+            ObType::Date => {
+                let py_date: &PyDate = self.obj.cast_as().map_err(map_py_err)?;
+                let date_str = py_date.str().map_err(map_py_err)?.to_str().map_err(map_py_err)?;
+                match Datetime::from_str(date_str) {
+                    Ok(dt) => dt.serialize(serializer),
+                    Err(e) => serde_err!("unable to convert date string to TOML date object {:?}", e),
+                }
             }
-            for (k, v) in array_items {
-                let key = table_key(k)?;
-                let value = self.with_obj(v);
-                map.serialize_entry(key, &value)?;
+            ObType::Time => {
+                let py_time: &PyTime = self.obj.cast_as().map_err(map_py_err)?;
+                let time_str = py_time.str().map_err(map_py_err)?.to_str().map_err(map_py_err)?;
+                match Datetime::from_str(time_str) {
+                    Ok(dt) => dt.serialize(serializer),
+                    Err(e) => serde_err!("unable to convert time string to TOML time object {:?}", e),
+                }
             }
-            for (k, v) in dict_items {
-                let key = table_key(k)?;
-                let value = self.with_obj(v);
-                map.serialize_entry(key, &value)?;
-            }
-            map.end()
-        } else if ob_type == lookup.list {
-            let py_list: &PyList = self.obj.cast_as().map_err(map_py_err)?;
-            let mut seq = serializer.serialize_seq(Some(py_list.len()))?;
-            for element in py_list {
-                seq.serialize_element(&self.with_obj(element))?
-            }
-            seq.end()
-        } else if ob_type == lookup.tuple {
-            let py_tuple: &PyTuple = self.obj.cast_as().map_err(map_py_err)?;
-            let mut seq = serializer.serialize_seq(Some(py_tuple.len()))?;
-            for element in py_tuple {
-                seq.serialize_element(&self.with_obj(element))?
-            }
-            seq.end()
-        } else if ob_type == lookup.datetime {
-            let py_dt: &PyDateTime = self.obj.cast_as().map_err(map_py_err)?;
-            let dt_str = py_dt.str().map_err(map_py_err)?.to_str().map_err(map_py_err)?;
-            let iso_str = dt_str.replacen("+00:00", "Z", 1);
-            match Datetime::from_str(&iso_str) {
-                Ok(dt) => dt.serialize(serializer),
-                Err(e) => serde_err!("unable to convert datetime string to TOML datetime object {:?}", e),
-            }
-        } else if ob_type == lookup.date {
-            let py_date: &PyDate = self.obj.cast_as().map_err(map_py_err)?;
-            let date_str = py_date.str().map_err(map_py_err)?.to_str().map_err(map_py_err)?;
-            match Datetime::from_str(date_str) {
-                Ok(dt) => dt.serialize(serializer),
-                Err(e) => serde_err!("unable to convert date string to TOML date object {:?}", e),
-            }
-        } else if ob_type == lookup.time {
-            let py_time: &PyTime = self.obj.cast_as().map_err(map_py_err)?;
-            let time_str = py_time.str().map_err(map_py_err)?.to_str().map_err(map_py_err)?;
-            match Datetime::from_str(time_str) {
-                Ok(dt) => dt.serialize(serializer),
-                Err(e) => serde_err!("unable to convert time string to TOML time object {:?}", e),
-            }
-        } else if ob_type == lookup.bytes || ob_type == lookup.bytearray {
-            serialize!(&[u8])
-        } else {
-            serde_err!("{} is not serializable to TOML", any_repr(self.obj))
+            ObType::Unknown => serde_err!("{} is not serializable to TOML", any_repr(self.obj)),
         }
     }
 }
