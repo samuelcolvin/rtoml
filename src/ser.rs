@@ -1,8 +1,8 @@
 use std::fmt;
-use std::str::FromStr;
+use std::str::{from_utf8, FromStr};
 
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDate, PyDateTime, PyDict, PyList, PyString, PyTime, PyTuple};
+use pyo3::types::{PyAny, PyByteArray, PyBytes, PyDate, PyDateTime, PyDict, PyList, PyString, PyTime, PyTuple};
 use serde::ser::{Error as SerError, Serialize, SerializeMap, SerializeSeq, Serializer};
 use toml::value::Datetime;
 
@@ -69,6 +69,7 @@ impl<'py> Serialize for SerializePyObject<'py> {
             let s = py_str.to_str().map_err(map_py_err)?;
             serializer.serialize_str(s)
         } else if ob_type == lookup.dict {
+            // See https://github.com/alexcrichton/toml-rs/issues/142#issuecomment-278970591
             let py_dict: &PyDict = self.obj.cast_as().map_err(map_py_err)?;
 
             let len = py_dict.len();
@@ -139,8 +140,21 @@ impl<'py> Serialize for SerializePyObject<'py> {
                 Ok(dt) => dt.serialize(serializer),
                 Err(e) => serde_err!("unable to convert time string to TOML time object {:?}", e),
             }
-        } else if ob_type == lookup.bytes || ob_type == lookup.bytearray {
-            serialize!(&[u8])
+        } else if ob_type == lookup.bytes {
+            let py_bytes: &PyBytes = self.obj.cast_as().map_err(map_py_err)?;
+            match from_utf8(py_bytes.as_bytes()) {
+                Ok(s) => serializer.serialize_str(s),
+                Err(e) => Err(map_py_err(e)),
+            }
+        } else if ob_type == lookup.bytearray {
+            let py_byte_array: &PyByteArray = self.obj.cast_as().map_err(map_py_err)?;
+            // see https://docs.rs/pyo3/latest/pyo3/types/struct.PyByteArray.html#method.as_bytes
+            // for why this is marked unsafe
+            let bytes = unsafe { py_byte_array.as_bytes() };
+            match from_utf8(bytes) {
+                Ok(s) => serializer.serialize_str(s),
+                Err(e) => Err(map_py_err(e)),
+            }
         } else {
             serde_err!("{} is not serializable to TOML", any_repr(self.obj))
         }
