@@ -20,7 +20,8 @@ import rtoml
         ({'x': {'a': 1}, 'y': 4}, 'y = 4\n\n[x]\na = 1\n'),
         ((1, 2, 3), '[1, 2, 3]'),
         ({'emoji': '😷'}, 'emoji = "😷"\n'),
-        ({'bytes': b'123'}, 'bytes = [49, 50, 51]\n'),  # TODO: should this be a string of "123"
+        # TODO: should this be a string of "123"
+        ({'bytes': b'123'}, 'bytes = [49, 50, 51]\n'),
         ({'polish': 'Witaj świecie'}, 'polish = "Witaj świecie"\n'),
     ],
 )
@@ -64,3 +65,22 @@ def test_dump_file(tmp_path):
 
 def test_varied_list():
     assert rtoml.dumps({'test': [1, '2']}) == 'test = [1, "2"]\n'
+
+
+def test_aot_before_array():
+    """Test for https://github.com/samuelcolvin/rtoml/issues/61
+    The order has to be changed because one kind of array will be dumped inline."""
+    assert (
+        rtoml.dumps({'świecie': [{'imię': 'Niemcy'}], 'ludzi': ['Herbert']})
+        == 'ludzi = ["Herbert"]\n\n[["świecie"]]\n"imię" = "Niemcy"\n'
+    )
+    # the same for tuples
+    assert (
+        rtoml.dumps({'świecie': ({'imię': 'Niemcy'},), 'ludzi': ('Herbert',)})
+        == 'ludzi = ["Herbert"]\n\n[["świecie"]]\n"imię" = "Niemcy"\n'
+    )
+    # It also works for empty lists
+    assert (
+        rtoml.dumps({'świecie': [{'imię': 'Niemcy'}], 'ludzi': []})
+        == 'ludzi = []\n\n[["świecie"]]\n"imię" = "Niemcy"\n'
+    )
