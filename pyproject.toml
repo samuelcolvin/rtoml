@@ -43,6 +43,7 @@ Source = "https://github.com/samuelcolvin/rtoml"
 
 [tool.maturin]
 bindings = "pyo3"
+module-name = "rtoml._rtoml"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

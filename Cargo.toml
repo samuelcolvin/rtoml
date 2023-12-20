@@ -16,9 +16,6 @@ nohash-hasher = "0.2.0"
 name = "_rtoml"
 crate-type = ["cdylib", "rlib"]
 
-[package.metadata.maturin]
-name = "rtoml._rtoml"
-
 [profile.release]
 lto = "fat"
 codegen-units = 1
