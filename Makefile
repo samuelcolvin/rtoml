@@ -57,7 +57,7 @@ mypy:
 
 .PHONY: test
 test:
-	pytest --cov=rtoml
+	coverage run -m pytest
 
 .PHONY: testcov
 testcov: build test

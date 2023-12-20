@@ -1,4 +1,4 @@
-coverage==7.3.4
+coverage[toml]==7.3.4
 dirty_equals==0.7.1
 pytest==7.4.3
 pytest-speed==0.3.2; python_version >= "3.8"

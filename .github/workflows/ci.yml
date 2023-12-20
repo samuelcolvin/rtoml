@@ -11,7 +11,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: test ${{ matrix.python-version }} rust ${{ matrix.rust-toolchain }}
+    name: test py${{ matrix.python-version }}
     strategy:
       fail-fast: false
       matrix:
