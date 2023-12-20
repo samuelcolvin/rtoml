@@ -5,11 +5,16 @@ import pytest
 import rtoml
 
 
+class CustomDict(dict):
+    pass
+
+
 @pytest.mark.parametrize(
     'input_obj,output_toml',
     [
         ({'text': '\nfoo\nbar\n'}, 'text = "\\nfoo\\nbar\\n"\n'),
         ({'foo': 'bar'}, 'foo = "bar"\n'),
+        (CustomDict({'foo': 'bar'}), 'foo = "bar"\n'),
         ([1, 2, 3], '[1, 2, 3]'),
         (datetime(1979, 5, 27, 7, 32), '1979-05-27T07:32:00'),
         (datetime(1979, 5, 27, 7, 32, tzinfo=timezone.utc), '1979-05-27T07:32:00Z'),
