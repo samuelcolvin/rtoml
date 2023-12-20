@@ -121,12 +121,16 @@ jobs:
         manylinux: [auto]
         include:
           - os: linux
+            manylinux: auto
             target: i686
           - os: linux
+            manylinux: auto
             target: armv7
           - os: linux
+            manylinux: auto
             target: ppc64le
           - os: linux
+            manylinux: auto
             target: s390x
 
           # musllinux
@@ -140,9 +144,11 @@ jobs:
           # windows
           - os: windows
             target: i686
+            manylinux: auto
             python-architecture: x86
           - os: windows
             target: aarch64
+            manylinux: auto
             interpreter: 3.11 3.12
 
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
