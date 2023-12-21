@@ -139,9 +139,10 @@ jobs:
           - os: windows
             target: i686
             python-architecture: x86
-          - os: windows
-            target: aarch64
-            interpreter: 3.11 3.12
+          #  https://github.com/PyO3/maturin-action/issues/237
+          # - os: windows
+          #   target: aarch64
+          #   interpreter: 3.11 3.12
 
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
     steps:
