@@ -1,6 +1,4 @@
 .DEFAULT_GOAL := all
-isort = isort rtoml tests
-black = black rtoml tests
 
 install:
 	pip install -U pip wheel pre-commit
@@ -22,16 +20,15 @@ build-prod:
 
 .PHONY: format
 format:
-	$(isort)
-	$(black)
+	ruff check --fix-only rtoml tests
+	ruff format rtoml tests
 	cargo fmt
 
 
 .PHONY: lint-python
 lint-python:
-	ruff src tests
-	$(isort) --check-only --df
-	$(black) --check --diff
+	ruff check rtoml tests
+	ruff format --check rtoml tests
 
 .PHONY: lint-rust
 lint-rust:
