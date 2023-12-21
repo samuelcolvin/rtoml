@@ -44,7 +44,7 @@ Source = "https://github.com/samuelcolvin/rtoml"
 [tool.maturin]
 bindings = "pyo3"
 module-name = "rtoml._rtoml"
-features = ["pyo3/extension-module"]
+features = ["pyo3/extension-module", "pyo3/generate-import-lib"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
