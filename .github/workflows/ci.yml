@@ -21,7 +21,7 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: set up python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: actions/setup-python@v4
       with:
@@ -196,7 +196,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: get dist artifacts
         uses: actions/download-artifact@v3
@@ -224,30 +224,23 @@ jobs:
       - run: twine check dist/*
 
   release:
-    needs: [build, check]
+    needs: [check, build, inspect-pypi-assets]
     if: "success() && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
+    environment: release
+
+    permissions:
+      id-token: write
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: set up python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - name: get dist artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: pypi_files
+          path: dist
 
-    - run: pip install -U twine
+      - run: ls -lh dist
 
-    - name: get dist artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: pypi_files
-        path: dist
-
-    - run: twine check dist/*
-
-    - name: upload to pypi
-      run: twine upload dist/*
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.pypi_token }}
+      - uses: pypa/gh-action-pypi-publish@release/v1
