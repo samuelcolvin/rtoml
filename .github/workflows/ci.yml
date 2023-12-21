@@ -115,9 +115,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [linux, macos, windows]
-        target: [x86_64, aarch64]
         include:
+          - os: linux
+            target: x86_64
+          - os: linux
+            target: aarch64
           - os: linux
             target: i686
           - os: linux
@@ -135,7 +137,15 @@ jobs:
             manylinux: musllinux_1_1
             target: aarch64
 
+          # macos
+          - os: macos
+            target: x86_64
+          - os: macos
+            target: aarch64
+
           # windows
+          - os: macos
+            target: x86_64
           - os: windows
             target: i686
             python-architecture: x86
@@ -143,9 +153,6 @@ jobs:
           # - os: windows
           #   target: aarch64
           #   interpreter: 3.11 3.12
-        exclude:
-          - os: windows
-            target: aarch64
 
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
     steps:
