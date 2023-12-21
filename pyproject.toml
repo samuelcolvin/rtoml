@@ -1,10 +1,10 @@
 [build-system]
-requires = ["maturin>=0.14,<0.15"]
+requires = ["maturin>=1,<2"]
 build-backend = "maturin"
 
 [project]
 name = "rtoml"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 authors = [
     {name = "Samuel Colvin", email = "s@muelcolvin.com"}
 ]
@@ -13,7 +13,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -44,18 +43,18 @@ Source = "https://github.com/samuelcolvin/rtoml"
 
 [tool.maturin]
 bindings = "pyo3"
+module-name = "rtoml._rtoml"
+features = ["pyo3/extension-module"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = [
-    "error",
-    "ignore:The hookimpl CovPlugin:pytest.PytestDeprecationWarning",
-]
+filterwarnings = ["error"]
 xfail_strict = true
 # avoid pytest warning when pytest-speed is not installed
 markers = ["benchmark"]
 
 [tool.coverage.run]
+source = ["rtoml"]
 branch = true
 
 [tool.coverage.report]

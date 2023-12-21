@@ -14,19 +14,11 @@ install-all: install
 
 .PHONY: build-dev
 build-dev:
-	@rm -f rtoml/*.so
-	cargo build
-	@rm -f target/debug/lib_rtoml.d
-	@rm -f target/debug/lib_rtoml.rlib
-	@mv target/debug/lib_rtoml.* rtoml/_rtoml.so
+	maturin develop
 
 .PHONY: build-prod
 build-prod:
-	@rm -f rtoml/*.so
-	cargo build --release
-	@rm -f target/release/lib_rtoml.d
-	@rm -f target/release/lib_rtoml.rlib
-	@mv target/release/lib_rtoml.* rtoml/_rtoml.so
+	maturin develop --release
 
 .PHONY: format
 format:
@@ -57,7 +49,7 @@ mypy:
 
 .PHONY: test
 test:
-	pytest --cov=rtoml
+	coverage run -m pytest
 
 .PHONY: testcov
 testcov: build test

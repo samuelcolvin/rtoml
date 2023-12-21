@@ -11,11 +11,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: test ${{ matrix.python-version }} rust ${{ matrix.rust-toolchain }}
+    name: test py${{ matrix.python-version }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
 
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -110,55 +110,53 @@ jobs:
           jobs: ${{ toJSON(needs) }}
 
   build:
-    name: build on ${{ matrix.os }} (${{ matrix.target }} - ${{ matrix.manylinux || 'auto' }})
-    # only run on push to main and on release
-    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build'))"
+    name: build os=${{ matrix.os }} target=${{ matrix.target }} int=${{ matrix.interpreter || 'all' }} ml=${{ matrix.manylinux || 'auto' }}
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build')
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, macos, windows]
-        target: [x86_64, aarch64]
-        manylinux: [auto]
         include:
-          - os: windows
-            ls: dir
-          - os: windows
-            ls: dir
-            target: i686
-            python-architecture: x86
-          - os: macos
-            target: aarch64
-          - os: ubuntu
-            target: i686
-          # GCC 4.8.5 in manylinux2014 container doesn't support c11 atomic
-          # we use manylinux_2_24 container for aarch64 and armv7 targets instead,
-          - os: ubuntu
-            target: aarch64
-            container: messense/manylinux_2_24-cross:aarch64
-          - os: ubuntu
-            target: armv7
-            container: messense/manylinux_2_24-cross:armv7
-          - os: ubuntu
-            target: ppc64le
-            container: messense/manylinux_2_24-cross:ppc64le
-          - os: ubuntu
-            target: s390x
-            container: messense/manylinux_2_24-cross:s390x
-          # musllinux
-          - os: ubuntu
+          - os: linux
             target: x86_64
-            manylinux: musllinux_1_1
-          - os: ubuntu
+          - os: linux
             target: aarch64
+          - os: linux
+            target: i686
+          - os: linux
+            target: armv7
+          - os: linux
+            target: ppc64le
+          - os: linux
+            target: s390x
+
+          # musllinux
+          - os: linux
             manylinux: musllinux_1_1
-        exclude:
-          # this fails
-          - os: windows
+            target: x86_64
+          - os: linux
+            manylinux: musllinux_1_1
             target: aarch64
 
-    runs-on: ${{ matrix.os }}-latest
+          # macos
+          - os: macos
+            target: x86_64
+          - os: macos
+            target: aarch64
+
+          # windows
+          - os: macos
+            target: x86_64
+          - os: windows
+            target: i686
+            python-architecture: x86
+          #  https://github.com/PyO3/maturin-action/issues/237
+          # - os: windows
+          #   target: aarch64
+          #   interpreter: 3.11 3.12
+
+    runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: set up python
       uses: actions/setup-python@v4
@@ -166,22 +164,27 @@ jobs:
         python-version: '3.11'
         architecture: ${{ matrix.python-architecture || 'x64' }}
 
+    - run: pip install -U twine
+
     - name: build sdist
-      if: ${{ matrix.os == 'ubuntu' && matrix.target == 'x86_64' && matrix.manylinux == 'auto' }}
-      uses: messense/maturin-action@v1
+      if: ${{ matrix.os == 'linux' && matrix.target == 'x86_64' }}
+      uses: PyO3/maturin-action@v1
       with:
         command: sdist
         args: --out dist
 
     - name: build wheels
-      uses: messense/maturin-action@v1
+      uses: PyO3/maturin-action@v1
       with:
         target: ${{ matrix.target }}
         manylinux: ${{ matrix.manylinux || 'auto' }}
-        container: ${{ matrix.container }}
-        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.7 3.8 3.9 3.10 3.11 3.12' }}
+        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12' }}
+        rust-toolchain: stable
+        docker-options: -e CI
 
-    - run: ${{ matrix.ls || 'ls -lh' }} dist/
+    - run: ${{ (matrix.os == 'windows' && 'dir') || 'ls -lh' }} dist/
+
+    - run: twine check --strict dist/*
 
     - uses: actions/upload-artifact@v3
       with:
