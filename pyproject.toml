@@ -48,10 +48,7 @@ features = ["pyo3/extension-module"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = [
-    "error",
-    "ignore:The hookimpl CovPlugin:pytest.PytestDeprecationWarning",
-]
+filterwarnings = ["error"]
 xfail_strict = true
 # avoid pytest warning when pytest-speed is not installed
 markers = ["benchmark"]
