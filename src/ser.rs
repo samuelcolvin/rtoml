@@ -65,11 +65,11 @@ impl<'py> Serialize for SerializePyObject<'py> {
         } else if ob_type == lookup.float {
             serialize!(f64)
         } else if ob_type == lookup.string {
-            let py_str: &PyString = self.obj.cast_as().map_err(map_py_err)?;
+            let py_str: &PyString = self.obj.downcast().map_err(map_py_err)?;
             let s = py_str.to_str().map_err(map_py_err)?;
             serializer.serialize_str(s)
         } else if ob_type == lookup.dict {
-            let py_dict: &PyDict = self.obj.cast_as().map_err(map_py_err)?;
+            let py_dict: &PyDict = self.obj.downcast().map_err(map_py_err)?;
 
             let len = py_dict.len();
             let mut simple_items: Vec<(&PyAny, &PyAny)> = Vec::with_capacity(len);
@@ -104,21 +104,21 @@ impl<'py> Serialize for SerializePyObject<'py> {
             }
             map.end()
         } else if ob_type == lookup.list {
-            let py_list: &PyList = self.obj.cast_as().map_err(map_py_err)?;
+            let py_list: &PyList = self.obj.downcast().map_err(map_py_err)?;
             let mut seq = serializer.serialize_seq(Some(py_list.len()))?;
             for element in py_list {
                 seq.serialize_element(&self.with_obj(element))?
             }
             seq.end()
         } else if ob_type == lookup.tuple {
-            let py_tuple: &PyTuple = self.obj.cast_as().map_err(map_py_err)?;
+            let py_tuple: &PyTuple = self.obj.downcast().map_err(map_py_err)?;
             let mut seq = serializer.serialize_seq(Some(py_tuple.len()))?;
             for element in py_tuple {
                 seq.serialize_element(&self.with_obj(element))?
             }
             seq.end()
         } else if ob_type == lookup.datetime {
-            let py_dt: &PyDateTime = self.obj.cast_as().map_err(map_py_err)?;
+            let py_dt: &PyDateTime = self.obj.downcast().map_err(map_py_err)?;
             let dt_str = py_dt.str().map_err(map_py_err)?.to_str().map_err(map_py_err)?;
             let iso_str = dt_str.replacen("+00:00", "Z", 1);
             match Datetime::from_str(&iso_str) {
@@ -126,14 +126,14 @@ impl<'py> Serialize for SerializePyObject<'py> {
                 Err(e) => serde_err!("unable to convert datetime string to TOML datetime object {:?}", e),
             }
         } else if ob_type == lookup.date {
-            let py_date: &PyDate = self.obj.cast_as().map_err(map_py_err)?;
+            let py_date: &PyDate = self.obj.downcast().map_err(map_py_err)?;
             let date_str = py_date.str().map_err(map_py_err)?.to_str().map_err(map_py_err)?;
             match Datetime::from_str(date_str) {
                 Ok(dt) => dt.serialize(serializer),
                 Err(e) => serde_err!("unable to convert date string to TOML date object {:?}", e),
             }
         } else if ob_type == lookup.time {
-            let py_time: &PyTime = self.obj.cast_as().map_err(map_py_err)?;
+            let py_time: &PyTime = self.obj.downcast().map_err(map_py_err)?;
             let time_str = py_time.str().map_err(map_py_err)?.to_str().map_err(map_py_err)?;
             match Datetime::from_str(time_str) {
                 Ok(dt) => dt.serialize(serializer),
@@ -152,7 +152,7 @@ fn map_py_err<I: fmt::Display, O: SerError>(err: I) -> O {
 }
 
 fn table_key<E: SerError>(key: &PyAny) -> Result<&str, E> {
-    if let Ok(py_string) = key.cast_as::<PyString>() {
+    if let Ok(py_string) = key.downcast::<PyString>() {
         py_string.to_str().map_err(map_py_err)
     } else if key.is_none() {
         Ok("null")
