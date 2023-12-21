@@ -177,6 +177,7 @@ jobs:
         manylinux: ${{ matrix.manylinux == 'manylinux' && 'auto' || matrix.manylinux }}
         args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12' }}
         rust-toolchain: stable
+        docker-options: -e CI
 
     - run: ${{ (matrix.os == 'windows' && 'dir') || 'ls -lh' }} dist/
 
