@@ -54,6 +54,7 @@ xfail_strict = true
 markers = ["benchmark"]
 
 [tool.coverage.run]
+source = ["rtoml"]
 branch = true
 
 [tool.coverage.report]
