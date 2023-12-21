@@ -110,27 +110,21 @@ jobs:
           jobs: ${{ toJSON(needs) }}
 
   build:
-    name: build on ${{ matrix.os }} (${{ matrix.target }} - ${{ matrix.interpreter || 'all' }}${{ matrix.os == 'linux' && format(' - {0}', matrix.manylinux == 'auto' && 'manylinux' || matrix.manylinux) || '' }})
-    # only run on push to main and on release
+    name: build os=${{ matrix.os }} target=${{ matrix.target }} int=${{ matrix.interpreter || 'all' }} ML=${{ matrix.manylinux || 'auto' }}
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build')
     strategy:
       fail-fast: false
       matrix:
         os: [linux, macos, windows]
         target: [x86_64, aarch64]
-        manylinux: [auto]
         include:
           - os: linux
-            manylinux: auto
             target: i686
           - os: linux
-            manylinux: auto
             target: armv7
           - os: linux
-            manylinux: auto
             target: ppc64le
           - os: linux
-            manylinux: auto
             target: s390x
 
           # musllinux
@@ -144,11 +138,9 @@ jobs:
           # windows
           - os: windows
             target: i686
-            manylinux: auto
             python-architecture: x86
           - os: windows
             target: aarch64
-            manylinux: auto
             interpreter: 3.11 3.12
 
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
@@ -174,7 +166,7 @@ jobs:
       uses: PyO3/maturin-action@v1
       with:
         target: ${{ matrix.target }}
-        manylinux: ${{ matrix.manylinux == 'manylinux' && 'auto' || matrix.manylinux }}
+        manylinux: ${{ matrix.manylinux || 'auto' }}
         args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12' }}
         rust-toolchain: stable
         docker-options: -e CI
