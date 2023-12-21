@@ -143,6 +143,9 @@ jobs:
           # - os: windows
           #   target: aarch64
           #   interpreter: 3.11 3.12
+        exclude:
+          - os: windows
+            target: aarch64
 
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
     steps:
