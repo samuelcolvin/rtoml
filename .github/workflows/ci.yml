@@ -144,7 +144,7 @@ jobs:
             target: aarch64
 
           # windows
-          - os: macos
+          - os: windows
             target: x86_64
           - os: windows
             target: i686
