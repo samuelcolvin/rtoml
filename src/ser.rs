@@ -2,7 +2,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDate, PyDateTime, PyDict, PyList, PyString, PyTime, PyTuple};
+use pyo3::types::{PyAny, PyDate, PyDateTime, PyDict, PyList, PySequence, PyString, PyTime, PyTuple};
 use serde::ser::{Error as SerError, Serialize, SerializeMap, SerializeSeq, Serializer};
 use toml::value::Datetime;
 
@@ -81,7 +81,11 @@ impl<'py> Serialize for SerializePyObject<'py> {
                 if v_ob_type == lookup.dict {
                     dict_items.push((k, v));
                 } else if v_ob_type == lookup.list || v_ob_type == lookup.tuple {
-                    array_items.push((k, v));
+                    if first_is_dict(v, self.ob_type_lookup).map_err(map_py_err)? {
+                        dict_items.push((k, v))
+                    } else {
+                        array_items.push((k, v));
+                    }
                 } else {
                     simple_items.push((k, v));
                 }
@@ -149,6 +153,15 @@ impl<'py> Serialize for SerializePyObject<'py> {
 
 fn map_py_err<I: fmt::Display, O: SerError>(err: I) -> O {
     O::custom(err.to_string())
+}
+
+fn first_is_dict(obj: &PyAny, ob_type_lookup: &PyTypeLookup) -> Result<bool, PyErr> {
+    let py_seq: &PySequence = obj.cast_as()?;
+    if py_seq.is_empty()? {
+        Ok(false)
+    } else {
+        Ok(py_seq.get_item(0)?.get_type_ptr() as usize == ob_type_lookup.dict)
+    }
 }
 
 fn table_key<E: SerError>(key: &PyAny) -> Result<&str, E> {
