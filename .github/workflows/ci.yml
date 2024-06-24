@@ -180,6 +180,9 @@ jobs:
         args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12' }}
         rust-toolchain: stable
         docker-options: -e CI
+      env:
+        # see https://github.com/PyO3/maturin/issues/2110
+        XWIN_VERSION: '16'
 
     - run: ${{ (matrix.os == 'windows' && 'dir') || 'ls -lh' }} dist/
 
