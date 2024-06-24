@@ -16,7 +16,7 @@ library, it passes all the [standard TOML tests](https://github.com/BurntSushi/t
 coverage on python code. Other TOML libraries for python I tried all failed to parse some valid TOML.
 * Performance: see [github.com/pwwang/toml-bench](https://github.com/pwwang/toml-bench) -
   rtoml is the fastest Python TOML libraries at the time of writing.
-* `None`-value handling: rtoml has an option to handle `None`-values flexibly, instead of simply ignore them.
+* `None`-value handling: rtoml has flexible support for `None` values, instead of simply ignoring them.
 
 ## Install
 
