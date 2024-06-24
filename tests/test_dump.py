@@ -10,7 +10,9 @@ import rtoml
     [
         ({'text': '\nfoo\nbar\n'}, 'text = "\\nfoo\\nbar\\n"\n'),
         ({'foo': 'bar'}, 'foo = "bar"\n'),
+        (None, '"!NONE"'),
         ([1, 2, 3], '[1, 2, 3]'),
+        ([1, 2, None], '[1, 2, "!NONE"]'),
         (datetime(1979, 5, 27, 7, 32), '1979-05-27T07:32:00'),
         (datetime(1979, 5, 27, 7, 32, tzinfo=timezone.utc), '1979-05-27T07:32:00Z'),
         (date(2022, 12, 31), '2022-12-31'),
@@ -18,14 +20,27 @@ import rtoml
         ({'x': datetime(1979, 5, 27, 7, 32)}, 'x = 1979-05-27T07:32:00\n'),
         # order changed to avoid https://github.com/alexcrichton/toml-rs/issues/142
         ({'x': {'a': 1}, 'y': 4}, 'y = 4\n\n[x]\na = 1\n'),
+        ({'x': 1, 'y': None}, 'x = 1\ny = "!NONE"\n'),
         ((1, 2, 3), '[1, 2, 3]'),
+        ((1, 2, None), '[1, 2, "!NONE"]'),
         ({'emoji': '😷'}, 'emoji = "😷"\n'),
         ({'bytes': b'123'}, 'bytes = [49, 50, 51]\n'),  # TODO: should this be a string of "123"
         ({'polish': 'Witaj świecie'}, 'polish = "Witaj świecie"\n'),
     ],
 )
 def test_dumps(input_obj, output_toml):
-    assert rtoml.dumps(input_obj) == output_toml
+    assert rtoml.dumps(input_obj, none_value='!NONE') == output_toml
+
+    @pytest.mark.parametrize(
+        'input_obj,output_toml',
+        [
+            ([1, 2, None], '[1, 2]'),
+            ((1, 2, None), '[1, 2]'),
+            (None, 'null'),
+        ],
+    )
+    def test_dumps_no_none(input_obj, output_toml):
+        assert rtoml.dumps(input_obj, none_value=None) == output_toml
 
 
 @pytest.mark.parametrize(

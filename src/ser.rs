@@ -60,7 +60,7 @@ impl<'py> Serialize for SerializePyObject<'py> {
         // ugly but this seems to be just marginally faster than a guarded match, also allows for custom cases
         // if we wanted to add them
         if ob_type == lookup.none {
-            serializer.serialize_str(self.none_value.unwrap())
+            serializer.serialize_str(self.none_value.unwrap_or("null"))
         } else if ob_type == lookup.int {
             serialize!(i64)
         } else if ob_type == lookup.bool {
@@ -112,20 +112,18 @@ impl<'py> Serialize for SerializePyObject<'py> {
             let py_list: &PyList = self.obj.downcast().map_err(map_py_err)?;
             let mut seq = serializer.serialize_seq(Some(py_list.len()))?;
             for element in py_list {
-                if self.none_value.is_none() && element.is_none() {
-                    continue;
+                if self.none_value.is_some() || !element.is_none() {
+                    seq.serialize_element(&self.with_obj(element))?
                 }
-                seq.serialize_element(&self.with_obj(element))?
             }
             seq.end()
         } else if ob_type == lookup.tuple {
             let py_tuple: &PyTuple = self.obj.downcast().map_err(map_py_err)?;
             let mut seq = serializer.serialize_seq(Some(py_tuple.len()))?;
             for element in py_tuple {
-                if self.none_value.is_none() && element.is_none() {
-                    continue;
+                if self.none_value.is_some() || !element.is_none() {
+                    seq.serialize_element(&self.with_obj(element))?
                 }
-                seq.serialize_element(&self.with_obj(element))?
             }
             seq.end()
         } else if ob_type == lookup.datetime {
@@ -162,11 +160,11 @@ fn map_py_err<I: fmt::Display, O: SerError>(err: I) -> O {
     O::custom(err.to_string())
 }
 
-fn table_key<'a, E: SerError>(key: &'a PyAny, none_value: Option<&'a str>) -> Result<&'a str, E> {
+fn table_key<'py, E: SerError>(key: &'py PyAny, none_value: Option<&'py str>) -> Result<&'py str, E> {
     if let Ok(py_string) = key.downcast::<PyString>() {
         py_string.to_str().map_err(map_py_err)
     } else if key.is_none() {
-        Ok(none_value.unwrap())
+        Ok(none_value.unwrap_or("null"))
     } else if let Ok(key) = key.extract::<bool>() {
         Ok(if key { "true" } else { "false" })
     } else {
