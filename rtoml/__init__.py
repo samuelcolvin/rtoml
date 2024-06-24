@@ -44,7 +44,7 @@ def loads(toml: str, *, none_value: Optional[str] = None) -> Dict[str, Any]:
     return _rtoml.deserialize(toml, none_value=none_value)
 
 
-def dumps(obj: Any, *, pretty: bool = False, none_value: Optional[str] = "null") -> str:
+def dumps(obj: Any, *, pretty: bool = False, none_value: Optional[str] = 'null') -> str:
     """
     Serialize a python object to TOML.
 
@@ -62,7 +62,7 @@ def dumps(obj: Any, *, pretty: bool = False, none_value: Optional[str] = "null")
     return serialize(obj, none_value=none_value)
 
 
-def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False, none_value: Optional[str] = "null") -> int:
+def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False, none_value: Optional[str] = 'null') -> int:
     """
     Serialize a python object to TOML and write it to a file.
 
