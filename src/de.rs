@@ -119,7 +119,7 @@ impl<'de, 'py> Visitor<'de> for PyDeserializer<'py> {
                 let mut key_set = NoHashSet::<u64>::with_hasher(BuildHasherDefault::default());
                 key_set.insert(hash_builder.hash_one(&first_key));
 
-                let dict = PyDict::new(self.py);
+                let dict = PyDict::new_bound(self.py);
                 dict.set_item(first_key, first_value).map_err(de::Error::custom)?;
 
                 while let Some((key, value)) =
@@ -134,7 +134,7 @@ impl<'de, 'py> Visitor<'de> for PyDeserializer<'py> {
 
                 Ok(dict.into_py(self.py))
             }
-            None => Ok(PyDict::new(self.py).into_py(self.py)),
+            None => Ok(PyDict::new_bound(self.py).into_py(self.py)),
         }
     }
 }

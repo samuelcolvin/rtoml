@@ -9,20 +9,18 @@ pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<PyObject> {
     let py_dt: PyObject = match &datetime.date {
         Some(date) => match &datetime.time {
             Some(t) => {
-                let py_tz: PyObject;
-                let tzinfo = match &datetime.offset {
+                let tzinfo: Option<Bound<'_, PyTzInfo>> = match &datetime.offset {
                     Some(offset) => {
                         let tz_info = match offset {
                             TomlOffset::Z => TzInfo::new(0, 0),
                             TomlOffset::Custom { hours, minutes } => TzInfo::new(*hours, *minutes),
                         };
-                        py_tz = Py::new(py, tz_info)?.to_object(py);
-                        Some(py_tz.extract(py)?)
+                        Some(Bound::new(py, tz_info)?.into_any().downcast_into()?)
                     }
                     None => None,
                 };
 
-                PyDateTime::new(
+                PyDateTime::new_bound(
                     py,
                     date.year as i32,
                     date.month,
@@ -31,14 +29,14 @@ pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<PyObject> {
                     t.minute,
                     t.second,
                     t.nanosecond / 1000,
-                    tzinfo,
+                    tzinfo.as_ref(),
                 )?
                 .to_object(py)
             }
-            None => PyDate::new(py, date.year as i32, date.month, date.day)?.to_object(py),
+            None => PyDate::new_bound(py, date.year as i32, date.month, date.day)?.to_object(py),
         },
         None => match &datetime.time {
-            Some(t) => PyTime::new(py, t.hour, t.minute, t.second, t.nanosecond / 1000, None)?.to_object(py),
+            Some(t) => PyTime::new_bound(py, t.hour, t.minute, t.second, t.nanosecond / 1000, None)?.to_object(py),
             None => {
                 // AFAIK this can't actually happen
                 let msg = "either time or date (or both) are required)".to_string();
@@ -66,15 +64,15 @@ impl TzInfo {
         (self.hours as i32) * 3600 + (self.minutes as i32) * 60
     }
 
-    fn utcoffset<'p>(&self, py: Python<'p>, _dt: &PyDateTime) -> PyResult<&'p PyDelta> {
-        PyDelta::new(py, 0, self.seconds(), 0, true)
+    fn utcoffset<'py>(&self, py: Python<'py>, _dt: &Bound<'py, PyDateTime>) -> PyResult<Bound<'py, PyDelta>> {
+        PyDelta::new_bound(py, 0, self.seconds(), 0, true)
     }
 
-    fn tzname(&self, _dt: &PyDateTime) -> String {
+    fn tzname(&self, _dt: &Bound<'_, PyDateTime>) -> String {
         self.__str__()
     }
 
-    fn dst(&self, _dt: &PyDateTime) -> Option<&PyDelta> {
+    fn dst(&self, _dt: &Bound<'_, PyDateTime>) -> Option<&PyDelta> {
         None
     }
 

@@ -1,5 +1,5 @@
-use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
+use pyo3::sync::GILOnceCell;
 use pyo3::types::{PyByteArray, PyBytes, PyDate, PyDateTime, PyDict, PyList, PyString, PyTime, PyTuple};
 
 #[derive(Clone)]
@@ -30,26 +30,26 @@ static TYPE_LOOKUP: GILOnceCell<PyTypeLookup> = GILOnceCell::new();
 impl PyTypeLookup {
     fn new(py: Python) -> Self {
         Self {
-            none: py.None().as_ref(py).get_type_ptr() as usize,
+            none: py.None().bind(py).get_type_ptr() as usize,
             // numeric types
-            int: 0i32.into_py(py).as_ref(py).get_type_ptr() as usize,
-            bool: true.into_py(py).as_ref(py).get_type_ptr() as usize,
-            float: 0f32.into_py(py).as_ref(py).get_type_ptr() as usize,
+            int: 0i32.into_py(py).bind(py).get_type_ptr() as usize,
+            bool: true.into_py(py).bind(py).get_type_ptr() as usize,
+            float: 0f32.into_py(py).bind(py).get_type_ptr() as usize,
             // string types
-            string: PyString::new(py, "s").get_type_ptr() as usize,
-            bytes: PyBytes::new(py, b"s").get_type_ptr() as usize,
-            bytearray: PyByteArray::new(py, b"s").get_type_ptr() as usize,
+            string: PyString::new_bound(py, "s").get_type_ptr() as usize,
+            bytes: PyBytes::new_bound(py, b"s").get_type_ptr() as usize,
+            bytearray: PyByteArray::new_bound(py, b"s").get_type_ptr() as usize,
             // sequence types
-            list: PyList::empty(py).get_type_ptr() as usize,
-            tuple: PyTuple::empty(py).get_type_ptr() as usize,
+            list: PyList::empty_bound(py).get_type_ptr() as usize,
+            tuple: PyTuple::empty_bound(py).get_type_ptr() as usize,
             // mapping types
-            dict: PyDict::new(py).get_type_ptr() as usize,
+            dict: PyDict::new_bound(py).get_type_ptr() as usize,
             // datetime types
-            datetime: PyDateTime::new(py, 2000, 1, 1, 0, 0, 0, 0, None)
+            datetime: PyDateTime::new_bound(py, 2000, 1, 1, 0, 0, 0, 0, None)
                 .unwrap()
                 .get_type_ptr() as usize,
-            date: PyDate::new(py, 2000, 1, 1).unwrap().get_type_ptr() as usize,
-            time: PyTime::new(py, 0, 0, 0, 0, None).unwrap().get_type_ptr() as usize,
+            date: PyDate::new_bound(py, 2000, 1, 1).unwrap().get_type_ptr() as usize,
+            time: PyTime::new_bound(py, 0, 0, 0, 0, None).unwrap().get_type_ptr() as usize,
         }
     }
 
