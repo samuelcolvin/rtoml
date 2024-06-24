@@ -1,6 +1,4 @@
 .DEFAULT_GOAL := all
-isort = isort rtoml tests
-black = black rtoml tests
 
 install:
 	pip install -U pip wheel pre-commit
@@ -14,32 +12,23 @@ install-all: install
 
 .PHONY: build-dev
 build-dev:
-	@rm -f rtoml/*.so
-	cargo build
-	@rm -f target/debug/lib_rtoml.d
-	@rm -f target/debug/lib_rtoml.rlib
-	@mv target/debug/lib_rtoml.* rtoml/_rtoml.so
+	maturin develop
 
 .PHONY: build-prod
 build-prod:
-	@rm -f rtoml/*.so
-	cargo build --release
-	@rm -f target/release/lib_rtoml.d
-	@rm -f target/release/lib_rtoml.rlib
-	@mv target/release/lib_rtoml.* rtoml/_rtoml.so
+	maturin develop --release
 
 .PHONY: format
 format:
-	$(isort)
-	$(black)
+	ruff check --fix-only rtoml tests
+	ruff format rtoml tests
 	cargo fmt
 
 
 .PHONY: lint-python
 lint-python:
-	ruff src tests
-	$(isort) --check-only --df
-	$(black) --check --diff
+	ruff check rtoml tests
+	ruff format --check rtoml tests
 
 .PHONY: lint-rust
 lint-rust:
@@ -57,7 +46,7 @@ mypy:
 
 .PHONY: test
 test:
-	pytest --cov=rtoml
+	coverage run -m pytest
 
 .PHONY: testcov
 testcov: build test

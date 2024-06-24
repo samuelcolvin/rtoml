@@ -7,10 +7,6 @@ use toml::{to_string as to_toml_string, to_string_pretty as to_toml_string_prett
 
 use crate::ser::SerializePyObject;
 
-#[cfg(not(target_env = "musl"))]
-#[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
-
 mod datetime;
 mod de;
 mod py_type;

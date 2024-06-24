@@ -1,10 +1,10 @@
 [build-system]
-requires = ["maturin>=0.13,<0.14"]
+requires = ["maturin>=1,<2"]
 build-backend = "maturin"
 
 [project]
 name = "rtoml"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 authors = [
     {name = "Samuel Colvin", email = "s@muelcolvin.com"}
 ]
@@ -13,11 +13,11 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Intended Audience :: Developers",
     "Intended Audience :: Information Technology",
     "Intended Audience :: System Administrators",
@@ -43,7 +43,8 @@ Source = "https://github.com/samuelcolvin/rtoml"
 
 [tool.maturin]
 bindings = "pyo3"
-sdist-include = ["Cargo.lock"]
+module-name = "rtoml._rtoml"
+features = ["pyo3/extension-module", "pyo3/generate-import-lib"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -53,6 +54,7 @@ xfail_strict = true
 markers = ["benchmark"]
 
 [tool.coverage.run]
+source = ["rtoml"]
 branch = true
 
 [tool.coverage.report]
@@ -66,25 +68,10 @@ exclude_lines = [
 
 [tool.ruff]
 line-length = 120
-extend-select = ["Q"]
+extend-select = ["Q", "RUF100", "UP", "I"]
 flake8-quotes = {inline-quotes = "single", multiline-quotes = "double"}
-
-[tool.black]
-color = true
-line-length = 120
-target-version = ["py37", "py38", "py39", "py310"]
-skip-string-normalization = true
-skip-magic-trailing-comma = true
-
-[tool.isort]
-line_length = 120
-known_first_party = ["rtoml"]
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-combine_as_imports = true
-color_output = true
-skip = "tests/toml_test.py"
+format.quote-style="single"
+target-version = "py38"
 
 [tool.mypy]
 follow_imports = "normal"

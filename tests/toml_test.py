@@ -3,7 +3,7 @@
 # via `~/go/bin/toml-test ./tests/toml_test.py`
 import json
 import sys
-from datetime import datetime, date, time
+from datetime import date, datetime, time
 from pathlib import Path
 
 ROOT_DIR = (Path(__file__).parent / '..').resolve()

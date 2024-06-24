@@ -1,6 +1,2 @@
-black==22.3.0
-ruff==0.0.108
-isort[colors]==5.10.1
-mypy==0.950
-pycodestyle==2.8.0
-pyflakes==2.4.0
+ruff==0.1.8
+mypy==1.7.1

@@ -51,28 +51,28 @@ impl<'de, 'py> Visitor<'de> for PyDeserializer<'py> {
     where
         E: de::Error,
     {
-        Ok(value.to_object(self.py))
+        Ok(value.into_py(self.py))
     }
 
     fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(value.to_object(self.py))
+        Ok(value.into_py(self.py))
     }
 
     fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(value.to_object(self.py))
+        Ok(value.into_py(self.py))
     }
 
     fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(value.to_object(self.py))
+        Ok(value.into_py(self.py))
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
@@ -81,7 +81,7 @@ impl<'de, 'py> Visitor<'de> for PyDeserializer<'py> {
     {
         match self.none_value {
             Some(none_value) if value == none_value => Ok(self.py.None()),
-            _ => Ok(value.to_object(self.py)),
+            _ => Ok(value.into_py(self.py)),
         }
     }
 
@@ -99,7 +99,7 @@ impl<'de, 'py> Visitor<'de> for PyDeserializer<'py> {
             elements.push(elem);
         }
 
-        Ok(elements.to_object(self.py))
+        Ok(elements.into_py(self.py))
     }
 
     fn visit_map<A>(self, mut map_access: A) -> Result<Self::Value, A::Error>
@@ -132,9 +132,9 @@ impl<'de, 'py> Visitor<'de> for PyDeserializer<'py> {
                     }
                 }
 
-                Ok(dict.to_object(self.py))
+                Ok(dict.into_py(self.py))
             }
-            None => Ok(PyDict::new(self.py).to_object(self.py)),
+            None => Ok(PyDict::new(self.py).into_py(self.py)),
         }
     }
 }
