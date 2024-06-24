@@ -227,3 +227,15 @@ smooth = true
 """
     with pytest.raises(rtoml.TomlParsingError, match='duplicate key: `apple` for key `fruit` at line 5 column 1'):
         rtoml.loads(s)
+
+
+def test_none_value():
+    assert rtoml.loads('x = "null"') == {'x': 'null'}
+    assert rtoml.loads('x = "null"', none_value='null') == {'x': None}
+    assert rtoml.loads('x = "null"', none_value='') == {'x': 'null'}
+    assert rtoml.loads('x = ""', none_value='') == {'x': None}
+
+    # Reproducible with the same none_value repr
+    s = {'x': None}
+    assert rtoml.dumps(s, none_value='py:None') == 'x = "py:None"\n'
+    assert rtoml.loads('x = "py:None"\n', none_value='py:None') == s

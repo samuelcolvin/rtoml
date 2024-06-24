@@ -15,7 +15,8 @@ A better TOML library for python implemented in rust.
 library, it passes all the [standard TOML tests](https://github.com/BurntSushi/toml-test) as well as having 100%
 coverage on python code. Other TOML libraries for python I tried all failed to parse some valid TOML.
 * Performance: see [github.com/pwwang/toml-bench](https://github.com/pwwang/toml-bench) -
-  rtoml is much faster than pure Python TOML libraries.
+  rtoml is the fastest Python TOML libraries at the time of writing.
+* `None`-value handling: rtoml has flexible support for `None` values, instead of simply ignoring them.
 
 ## Install
 
@@ -33,38 +34,50 @@ installed before you can install rtoml.
 
 #### load
 ```python
-def load(toml: Union[str, Path, TextIO]) -> Dict[str, Any]: ...
+def load(toml: Union[str, Path, TextIO], *, none_value: Optional[str] = None) -> Dict[str, Any]: ...
 ```
 
-Parse TOML via a string or file and return a python dictionary. The `toml` argument may be a `str`,
-`Path` or file object from `open()`.
+Parse TOML via a string or file and return a python dictionary.
+
+* `toml`: a `str`, `Path` or file object from `open()`.
+* `none_value`: controlling which value in `toml` is loaded as `None` in python. By default, `none_value` is `None`, which means nothing is loaded as `None`
 
 #### loads
 ```python
-def loads(toml: str) -> Dict[str, Any]: ...
+def loads(toml: str, *, none_value: Optional[str] = None) -> Dict[str, Any]: ...
 ```
 
 Parse a TOML string and return a python dictionary. (provided to match the interface of `json` and similar libraries)
 
+* `toml`: a `str` containing TOML.
+* `none_value`: controlling which value in `toml` is loaded as `None` in python. By default, `none_value` is `None`, which means nothing is loaded as `None`
+
 #### dumps
 ```python
-def dumps(obj: Any, *, pretty: bool = False) -> str: ...
+def dumps(obj: Any, *, pretty: bool = False, none_value: Optional[str] = "null") -> str: ...
 ```
 
 Serialize a python object to TOML.
 
-If `pretty` is true, output has a more "pretty" format.
+* `obj`: a python object to be serialized.
+* `pretty`: if `True` the output has a more "pretty" format.
+* `none_value`: controlling how `None` values in `obj` are serialized. `none_value=None` means `None` values are ignored.
 
 #### dump
 ```python
-def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False) -> int: ...
+def dump(
+    obj: Any, file: Union[Path, TextIO], *, pretty: bool = False, none_value: Optional[str] = "null"
+) -> int: ...
 ```
 
-Serialize a python object to TOML and write it to a file. `file` may be a `Path` or file object from `open()`.
+Serialize a python object to TOML and write it to a file.
 
-If `pretty` is true, output has a more "pretty" format.
+* `obj`: a python object to be serialized.
+* `file`: a `Path` or file object from `open()`.
+* `pretty`: if `True` the output has a more "pretty" format.
+* `none_value`: controlling how `None` values in `obj` are serialized. `none_value=None` means `None` values are ignored.
 
-### Example
+### Examples
 
 ```py
 from datetime import datetime, timezone, timedelta
@@ -115,4 +128,34 @@ enabled = true
 server = "192.168.1.1"
 ports = [8001, 8001, 8002]
 """
+```
+
+An example of `None`-value handling:
+
+```python
+obj = {
+    'a': None,
+    'b': 1,
+    'c': [1, 2, None, 3],
+}
+
+# Ignore None values
+assert rtoml.dumps(obj, none_value=None) == """\
+b = 1
+c = [1, 2, 3]
+"""
+
+# Serialize None values as '@None'
+assert rtoml.dumps(obj, none_value='@None') == """\
+a = "@None"
+b = 1
+c = [1, 2, "@None", 3]
+"""
+
+# Deserialize '@None' back to None
+assert rtoml.load("""\
+a = "@None"
+b = 1
+c = [1, 2, "@None", 3]
+""", none_value='@None') == obj
 ```

@@ -1,6 +1,6 @@
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
-use pyo3::types::{PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyList, PyString, PyTime, PyTuple};
+use pyo3::types::{PyByteArray, PyBytes, PyDate, PyDateTime, PyDict, PyList, PyString, PyTime, PyTuple};
 
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -23,7 +23,6 @@ pub struct PyTypeLookup {
     pub datetime: usize,
     pub date: usize,
     pub time: usize,
-    pub timedelta: usize,
 }
 
 static TYPE_LOOKUP: GILOnceCell<PyTypeLookup> = GILOnceCell::new();
@@ -51,7 +50,6 @@ impl PyTypeLookup {
                 .get_type_ptr() as usize,
             date: PyDate::new(py, 2000, 1, 1).unwrap().get_type_ptr() as usize,
             time: PyTime::new(py, 0, 0, 0, 0, None).unwrap().get_type_ptr() as usize,
-            timedelta: PyDelta::new(py, 0, 0, 0, false).unwrap().get_type_ptr() as usize,
         }
     }
 
