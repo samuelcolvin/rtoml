@@ -1,8 +1,8 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::{create_exception, wrap_pyfunction};
-use serde::de::DeserializeSeed;
 
+use serde::de::DeserializeSeed;
 use toml::{to_string as to_toml_string, to_string_pretty as to_toml_string_pretty, Deserializer};
 
 use crate::ser::SerializePyObject;
@@ -24,7 +24,7 @@ fn deserialize(py: Python, toml_data: String, none_value: Option<&str>) -> PyRes
 }
 
 #[pyfunction]
-fn serialize(py: Python, obj: &PyAny, none_value: Option<&str>) -> PyResult<String> {
+fn serialize(py: Python, obj: Bound<'_, PyAny>, none_value: Option<&str>) -> PyResult<String> {
     let s = SerializePyObject::new(py, obj, none_value);
     match to_toml_string(&s) {
         Ok(s) => Ok(s),
@@ -33,7 +33,7 @@ fn serialize(py: Python, obj: &PyAny, none_value: Option<&str>) -> PyResult<Stri
 }
 
 #[pyfunction]
-fn serialize_pretty(py: Python, obj: &PyAny, none_value: Option<&str>) -> PyResult<String> {
+fn serialize_pretty(py: Python, obj: Bound<'_, PyAny>, none_value: Option<&str>) -> PyResult<String> {
     let s = SerializePyObject::new(py, obj, none_value);
     match to_toml_string_pretty(&s) {
         Ok(s) => Ok(s),
@@ -52,9 +52,9 @@ pub fn get_version() -> String {
 }
 
 #[pymodule]
-fn _rtoml(py: Python, m: &PyModule) -> PyResult<()> {
-    m.add("TomlParsingError", py.get_type::<TomlParsingError>())?;
-    m.add("TomlSerializationError", py.get_type::<TomlSerializationError>())?;
+fn _rtoml(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add("TomlParsingError", py.get_type_bound::<TomlParsingError>())?;
+    m.add("TomlSerializationError", py.get_type_bound::<TomlSerializationError>())?;
     let version = get_version();
     m.add("__version__", version.clone())?;
     // keep VERSION for compatibility
