@@ -1,8 +1,8 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::{create_exception, wrap_pyfunction};
-use serde::de::DeserializeSeed;
 
+use serde::de::DeserializeSeed;
 use toml::{to_string as to_toml_string, to_string_pretty as to_toml_string_pretty, Deserializer};
 
 use crate::ser::SerializePyObject;
