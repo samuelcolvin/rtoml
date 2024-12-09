@@ -51,7 +51,7 @@ macro_rules! serde_err {
     };
 }
 
-impl<'py> Serialize for SerializePyObject<'py> {
+impl Serialize for SerializePyObject<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
