@@ -30,24 +30,21 @@ jobs:
       with:
         enable-cache: true
 
-    - name: install rust stable
-      uses: dtolnay/rust-toolchain@stable
+    - uses: dtolnay/rust-toolchain@stable
 
     - id: cache-rust
       uses: Swatinem/rust-cache@v2
       with:
         key: v1
 
-    - name: Install dependencies
-      run: uv sync --frozen
+    - run: uv sync --frozen
 
     - run: make test
 
     - run: ls -lha
     - run: uv run coverage xml
 
-    - name: install go
-      uses: actions/setup-go@v1
+    - uses: actions/setup-go@v1
       with:
         go-version: 1.16.x
 

@@ -48,7 +48,7 @@ lint: lint-python lint-rust
 
 .PHONY: mypy
 typecheck:
-	uv run mypy rtoml
+	uv run mypy python
 
 .PHONY: test
 test:
