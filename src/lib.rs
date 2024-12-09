@@ -16,6 +16,7 @@ create_exception!(_rtoml, TomlParsingError, PyValueError);
 create_exception!(_rtoml, TomlSerializationError, PyValueError);
 
 #[pyfunction]
+#[pyo3(signature = (toml_data, none_value=None))]
 fn deserialize(py: Python, toml_data: String, none_value: Option<&str>) -> PyResult<PyObject> {
     let mut deserializer = Deserializer::new(&toml_data);
     let seed = de::PyDeserializer::new(py, none_value);
@@ -24,6 +25,7 @@ fn deserialize(py: Python, toml_data: String, none_value: Option<&str>) -> PyRes
 }
 
 #[pyfunction]
+#[pyo3(signature = (obj, none_value=None))]
 fn serialize(py: Python, obj: Bound<'_, PyAny>, none_value: Option<&str>) -> PyResult<String> {
     let s = SerializePyObject::new(py, obj, none_value);
     match to_toml_string(&s) {
@@ -33,6 +35,7 @@ fn serialize(py: Python, obj: Bound<'_, PyAny>, none_value: Option<&str>) -> PyR
 }
 
 #[pyfunction]
+#[pyo3(signature = (obj, none_value=None))]
 fn serialize_pretty(py: Python, obj: Bound<'_, PyAny>, none_value: Option<&str>) -> PyResult<String> {
     let s = SerializePyObject::new(py, obj, none_value);
     match to_toml_string_pretty(&s) {
@@ -53,8 +56,8 @@ pub fn get_version() -> String {
 
 #[pymodule]
 fn _rtoml(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("TomlParsingError", py.get_type_bound::<TomlParsingError>())?;
-    m.add("TomlSerializationError", py.get_type_bound::<TomlSerializationError>())?;
+    m.add("TomlParsingError", py.get_type::<TomlParsingError>())?;
+    m.add("TomlSerializationError", py.get_type::<TomlSerializationError>())?;
     let version = get_version();
     m.add("__version__", version.clone())?;
     // keep VERSION for compatibility

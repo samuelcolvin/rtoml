@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
     env:
       UV_PYTHON: ${{ matrix.python-version }}
@@ -152,7 +152,7 @@ jobs:
             python-architecture: x86
           - os: windows
             target: aarch64
-            interpreter: 3.11 3.12
+            interpreter: 3.11 3.12 3.13
 
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
     steps:
@@ -184,7 +184,7 @@ jobs:
       with:
         target: ${{ matrix.target }}
         manylinux: ${{ matrix.manylinux || 'auto' }}
-        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12' }}
+        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12 3.13' }}
         rust-toolchain: stable
         docker-options: -e CI
       env:

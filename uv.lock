@@ -136,6 +136,29 @@ wheels = [
 ]
 
 [[package]]
+name = "maturin"
+version = "1.7.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ab/1e/085ddc0e5b08ae7af7a743a0dd6ed06b22a1332288488f1a333137885150/maturin-1.7.8.tar.gz", hash = "sha256:649c6ef3f0fa4c5f596140d761dc5a4d577c485cc32fb5b9b344a8280352880d", size = 195704 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7e/ed/c8bb26e91c879e418ae1b01630722ed20b6fe0e6755be8d538d83666f136/maturin-1.7.8-py3-none-linux_armv6l.whl", hash = "sha256:c6950fd2790acd93265e1501cea66f9249cff19724654424ca75a3b17ebb315b", size = 7515691 },
+    { url = "https://files.pythonhosted.org/packages/38/7a/573f969315f0b92a09a0a565d45e98812c87796e2e19a7856159ab234faf/maturin-1.7.8-py3-none-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:f98288d5c382bacf0c076871dfd50c38f1eb2248f417551e98dd6f47f6ee8afa", size = 14434454 },
+    { url = "https://files.pythonhosted.org/packages/a6/17/46834841fbf19231487f185e68b95ca348cc05cce49be8787e0bc7e9dc47/maturin-1.7.8-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:b2d4e0f674ca29864e6b86c2eb9fee8236d1c7496c25f7300e34229272468f4c", size = 7509122 },
+    { url = "https://files.pythonhosted.org/packages/c1/8f/bf8b4871eb390a4baef2e0bb5016852c7c0311a9772e2945534cfa2ee40e/maturin-1.7.8-py3-none-manylinux_2_12_i686.manylinux2010_i686.musllinux_1_1_i686.whl", hash = "sha256:6cafb17bf57822bdc04423d9e3e766d42918d474848fe9833e397267514ba891", size = 7598870 },
+    { url = "https://files.pythonhosted.org/packages/dc/43/c842be67a7c59568082345249b956138ae93d0b2474fb41c186ce26d05e1/maturin-1.7.8-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.musllinux_1_1_x86_64.whl", hash = "sha256:2b2bdee0c3a84696b3a809054c43ead1a04b7b3321cbd5b8f5676e4ba4691d0f", size = 7932310 },
+    { url = "https://files.pythonhosted.org/packages/12/12/42435d05f2d6c75eb621751e6f021d29eb34d18e3b9c5c94d828744c2d54/maturin-1.7.8-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:b8188b71259fc2bc568d9c8acc186fcfed96f42539bcb55b8e6f4ec26e411f37", size = 7321964 },
+    { url = "https://files.pythonhosted.org/packages/b4/26/f3272ee985ebf9b3e8c4cd4f4efb022af1e12c9f53aed0dcc9a255399f4e/maturin-1.7.8-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.musllinux_1_1_armv7l.whl", hash = "sha256:a4f58c2a53c2958a1bf090960b08b28e676136cd88ac2f5dfdcf1b14ea54ec06", size = 7408613 },
+    { url = "https://files.pythonhosted.org/packages/36/7d/be27bcc7d3ac6e6c2136a8ec0cc56f227a292d6cfdde55e095b6c0aa24a9/maturin-1.7.8-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.musllinux_1_1_ppc64le.whl", hash = "sha256:c5d6c0c631d1fc646cd3834795e6cfd72ab4271d289df7e0f911261a02bec75f", size = 9496974 },
+    { url = "https://files.pythonhosted.org/packages/e1/e8/0d7323e9a31c11edf69c4473d73eca74803ce3e2390abf8ae3ac7eb10b04/maturin-1.7.8-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:c23664d19dadcbf800ef70f26afb2e0485a985c62889930934f019c565534c23", size = 10828401 },
+    { url = "https://files.pythonhosted.org/packages/7e/82/5080e052c0d8c9872f6d4b94cae84c17ed7f2ea270d709210ea6445b655f/maturin-1.7.8-py3-none-win32.whl", hash = "sha256:403eebf1afa6f19b49425f089e39c53b8e597bc86a47f3a76e828dc78d27fa80", size = 6845240 },
+    { url = "https://files.pythonhosted.org/packages/6d/c9/9b162361ded893f36038c2f8ac6a972ec441c11df8d17c440997eb28090f/maturin-1.7.8-py3-none-win_amd64.whl", hash = "sha256:1ce48d007438b895f8665314b6748ac0dab31e4f32049a60b52281dd2dccbdde", size = 7762332 },
+    { url = "https://files.pythonhosted.org/packages/fa/40/46d4742db742f69a7fe0054cd7c82bc79b2d70cb8c91f7e737e75c28a5f3/maturin-1.7.8-py3-none-win_arm64.whl", hash = "sha256:cc92a62953205e8945b6cfe6943d6a8576a4442d30d9c67141f944f4f4640e62", size = 6501353 },
+]
+
+[[package]]
 name = "mdurl"
 version = "0.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -286,6 +309,7 @@ source = { editable = "." }
 dev = [
     { name = "coverage", extra = ["toml"] },
     { name = "dirty-equals" },
+    { name = "maturin" },
     { name = "pytest" },
     { name = "pytest-pretty" },
     { name = "pytest-speed" },
@@ -301,6 +325,7 @@ lint = [
 dev = [
     { name = "coverage", extras = ["toml"], specifier = ">=7.6.9" },
     { name = "dirty-equals", specifier = ">=0.8.0" },
+    { name = "maturin", specifier = ">=1.7.8" },
     { name = "pytest", specifier = ">=8.3.4" },
     { name = "pytest-pretty", specifier = ">=1.2.0" },
     { name = "pytest-speed", specifier = ">=0.3.5" },
