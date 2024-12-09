@@ -1,6 +1,6 @@
 from io import TextIOBase
 from pathlib import Path
-from typing import Any, Dict, Optional, TextIO, Union
+from typing import Any, Optional, TextIO, Union
 
 from . import _rtoml
 
@@ -13,7 +13,7 @@ TomlParsingError = _rtoml.TomlParsingError
 TomlSerializationError = _rtoml.TomlSerializationError
 
 
-def load(toml: Union[str, Path, TextIO], *, none_value: Optional[str] = None) -> Dict[str, Any]:
+def load(toml: Union[str, Path, TextIO], *, none_value: Optional[str] = None) -> dict[str, Any]:
     """
     Parse TOML via a string or file and return a python dict.
 
@@ -30,7 +30,7 @@ def load(toml: Union[str, Path, TextIO], *, none_value: Optional[str] = None) ->
     return loads(toml, none_value=none_value)
 
 
-def loads(toml: str, *, none_value: Optional[str] = None) -> Dict[str, Any]:
+def loads(toml: str, *, none_value: Optional[str] = None) -> dict[str, Any]:
     """
     Parse a TOML string and return a python dict. (provided to match the interface of `json` and similar libraries)
 
