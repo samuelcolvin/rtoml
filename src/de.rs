@@ -6,6 +6,7 @@ use std::str::FromStr;
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::IntoPyObjectExt;
 
 use ahash::RandomState;
 use nohash_hasher::NoHashHasher;
@@ -51,28 +52,28 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
     where
         E: de::Error,
     {
-        Ok(value.into_py(self.py))
+        value.into_py_any(self.py).map_err(de::Error::custom)
     }
 
     fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(value.into_py(self.py))
+        value.into_py_any(self.py).map_err(de::Error::custom)
     }
 
     fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(value.into_py(self.py))
+        value.into_py_any(self.py).map_err(de::Error::custom)
     }
 
     fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(value.into_py(self.py))
+        value.into_py_any(self.py).map_err(de::Error::custom)
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
@@ -81,7 +82,7 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
     {
         match self.none_value {
             Some(none_value) if value == none_value => Ok(self.py.None()),
-            _ => Ok(value.into_py(self.py)),
+            _ => value.into_py_any(self.py).map_err(de::Error::custom),
         }
     }
 
@@ -99,7 +100,7 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
             elements.push(elem);
         }
 
-        Ok(elements.into_py(self.py))
+        elements.into_py_any(self.py).map_err(de::Error::custom)
     }
 
     fn visit_map<A>(self, mut map_access: A) -> Result<Self::Value, A::Error>
@@ -119,7 +120,7 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
                 let mut key_set = NoHashSet::<u64>::with_hasher(BuildHasherDefault::default());
                 key_set.insert(hash_builder.hash_one(&first_key));
 
-                let dict = PyDict::new_bound(self.py);
+                let dict = PyDict::new(self.py);
                 dict.set_item(first_key, first_value).map_err(de::Error::custom)?;
 
                 while let Some((key, value)) =
@@ -132,9 +133,9 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
                     }
                 }
 
-                Ok(dict.into_py(self.py))
+                dict.into_py_any(self.py).map_err(de::Error::custom)
             }
-            None => Ok(PyDict::new_bound(self.py).into_py(self.py)),
+            None => PyDict::new(self.py).into_py_any(self.py).map_err(de::Error::custom),
         }
     }
 }

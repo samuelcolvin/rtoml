@@ -17,6 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Intended Audience :: Developers",
     "Intended Audience :: Information Technology",
     "Intended Audience :: System Administrators",
@@ -44,6 +45,7 @@ Source = "https://github.com/samuelcolvin/rtoml"
 dev = [
     "coverage[toml]>=7.6.9",
     "dirty-equals>=0.8.0",
+    "maturin>=1.7.8",
     "pytest>=8.3.4",
     "pytest-pretty>=1.2.0",
     "pytest-speed>=0.3.5",

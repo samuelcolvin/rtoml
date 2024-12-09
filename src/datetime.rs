@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDelta, PyTime, PyTzInfo};
+use pyo3::IntoPyObjectExt;
 
 use toml::value::{Datetime as TomlDatetime, Offset as TomlOffset};
 
@@ -17,7 +18,7 @@ pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<PyObject> {
                 None => None,
             };
 
-            PyDateTime::new_bound(
+            let dt = PyDateTime::new(
                 py,
                 date.year as i32,
                 date.month,
@@ -27,13 +28,11 @@ pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<PyObject> {
                 t.second,
                 t.nanosecond / 1000,
                 tz_info.as_ref(),
-            )
-            .map(|dt| dt.to_object(py))
+            )?;
+            Ok(dt.into_py_any(py)?)
         }
-        (Some(date), None) => PyDate::new_bound(py, date.year as i32, date.month, date.day).map(|d| d.to_object(py)),
-        (None, Some(t)) => {
-            PyTime::new_bound(py, t.hour, t.minute, t.second, t.nanosecond / 1000, None).map(|t| t.to_object(py))
-        }
+        (Some(date), None) => Ok(PyDate::new(py, date.year as i32, date.month, date.day)?.into_py_any(py)?),
+        (None, Some(t)) => Ok(PyTime::new(py, t.hour, t.minute, t.second, t.nanosecond / 1000, None)?.into_py_any(py)?),
         (None, None) => {
             // AFAIK this can't actually happen
             unreachable!("either time or date (or both) are required")
@@ -59,14 +58,14 @@ impl TzInfo {
     }
 
     fn utcoffset<'py>(&self, dt: &Bound<'py, PyDateTime>) -> PyResult<Bound<'py, PyDelta>> {
-        PyDelta::new_bound(dt.py(), 0, self.seconds(), 0, true)
+        PyDelta::new(dt.py(), 0, self.seconds(), 0, true)
     }
 
     fn tzname(&self, _dt: &Bound<'_, PyAny>) -> String {
         self.__str__()
     }
 
-    fn dst(&self, _dt: &Bound<'_, PyAny>) -> Option<&PyDelta> {
+    fn dst<'py>(&self, _dt: &Bound<'py, PyAny>) -> Option<Bound<'py, PyDelta>> {
         None
     }
 
