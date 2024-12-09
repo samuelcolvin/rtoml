@@ -257,4 +257,4 @@ jobs:
 
       - run: ls -lh dist
 
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@release/v1.12.3
