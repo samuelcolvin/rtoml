@@ -65,6 +65,7 @@ jobs:
         rm tests/invalid/integer-positive-hex.*
         go build ./cmd/toml-test
         cd ../
+        make build-dev
         ./toml-test/toml-test ./tests/toml_test.py
 
     - uses: codecov/codecov-action@v3
@@ -85,7 +86,7 @@ jobs:
       with:
         enable-cache: true
 
-    - run: uv sync --frozen --group lint --only-dev --no-install-project
+    - run: uv sync --frozen --group lint --no-dev --no-install-project
 
     - uses: dtolnay/rust-toolchain@stable
       with:
