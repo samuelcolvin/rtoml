@@ -1,14 +1,21 @@
 .DEFAULT_GOAL := all
 
-install:
-	pip install -U pip wheel pre-commit
-	pip install -r tests/requirements.txt
-	pip install -e .
-	pre-commit install
+.PHONY: .uv  # Check that uv is installed
+.uv:
+	@uv --version || echo 'Please install uv: https://docs.astral.sh/uv/getting-started/installation/'
 
-.PHONY: install-all
-install-all: install
-	pip install -r tests/requirements-linting.txt
+.PHONY: .pre-commit  # Check that pre-commit is installed
+.pre-commit:
+	@pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
+
+.PHONY: install  # Install the package, dependencies, and pre-commit for local development
+install: .uv .pre-commit
+	uv sync --frozen --group lint
+	pre-commit install --install-hooks
+
+.PHONY: sync  # Update local packages and uv.lock
+sync: .uv
+	uv sync --all-extras --all-packages --group lint --group docs
 
 .PHONY: build-dev
 build-dev:
@@ -20,15 +27,14 @@ build-prod:
 
 .PHONY: format
 format:
-	ruff check --fix-only rtoml tests
-	ruff format rtoml tests
+	uv run ruff format
+	uv run ruff check --fix --fix-only
 	cargo fmt
-
 
 .PHONY: lint-python
 lint-python:
-	ruff check rtoml tests
-	ruff format --check rtoml tests
+	uv run ruff format --check
+	uv run ruff check
 
 .PHONY: lint-rust
 lint-rust:
@@ -41,37 +47,17 @@ lint-rust:
 lint: lint-python lint-rust
 
 .PHONY: mypy
-mypy:
-	mypy rtoml
+typecheck:
+	uv run mypy rtoml
 
 .PHONY: test
 test:
-	coverage run -m pytest
+	uv run coverage run -m pytest
 
 .PHONY: testcov
-testcov: build test
+testcov: build-dev test
 	@echo "building coverage html"
-	@coverage html
+	@uv run coverage html
 
 .PHONY: all
-all: lint mypy testcov
-
-.PHONY: clean
-clean:
-	rm -rf `find . -name __pycache__`
-	rm -f `find . -type f -name '*.py[co]' `
-	rm -f `find . -type f -name '*~' `
-	rm -f `find . -type f -name '.*~' `
-	rm -rf dist
-	rm -rf build
-	rm -rf target
-	rm -rf .cache
-	rm -rf .pytest_cache
-	rm -rf .mypy_cache
-	rm -rf htmlcov
-	rm -rf *.egg-info
-	rm -f .coverage
-	rm -f .coverage.*
-	rm -rf build
-	rm -f rtoml/*.so
-	python setup.py clean
+all: lint typecheck testcov

@@ -18,30 +18,25 @@ jobs:
         python-version: ['3.9', '3.10', '3.11', '3.12']
 
     env:
-      PYTHON: ${{ matrix.python-version }}
+      UV_PYTHON: ${{ matrix.python-version }}
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: set up python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+    - uses: astral-sh/setup-uv@v3
       with:
-        python-version: ${{ matrix.python-version }}
+        enable-cache: true
 
     - name: install rust stable
       uses: dtolnay/rust-toolchain@stable
 
     - id: cache-rust
-      name: cache rust
       uses: Swatinem/rust-cache@v2
       with:
         key: v1
 
-    - run: pip install -r tests/requirements.txt
-
-    - run: pip install -e .
-
-    - run: pip freeze
+    - name: Install dependencies
+      run: uv sync --frozen
 
     - run: make test
 
@@ -72,7 +67,7 @@ jobs:
     - uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
-        env_vars: PYTHON
+        env_vars: UV_PYTHON
 
   lint:
     runs-on: ubuntu-latest
@@ -80,11 +75,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v4
+    - uses: astral-sh/setup-uv@v3
       with:
-        python-version: '3.11'
+        enable-cache: true
 
-    - run: pip install -r tests/requirements-linting.txt
+    - name: Install dependencies
+      run: uv sync --python 3.12 --frozen --group lint
 
     - name: install rust
       uses: dtolnay/rust-toolchain@stable
@@ -94,9 +90,13 @@ jobs:
     - name: cache rust
       uses: Swatinem/rust-cache@v2
 
-    - run: pip freeze
-    - run: make lint
-    - run: make mypy
+    - uses: pre-commit/action@v3.0.0
+      with:
+        extra_args: --all-files --verbose
+      env:
+        SKIP: no-commit-to-branch
+
+    - run: make typecheck
 
   # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
   check:
@@ -162,6 +162,12 @@ jobs:
       with:
         python-version: '3.11'
         architecture: ${{ matrix.python-architecture || 'x64' }}
+
+    - name: check GITHUB_REF matches package version
+      uses: samuelcolvin/check-python-version@v4.1
+      if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.os == 'ubuntu' }}
+      with:
+        version_file_path: Cargo.toml
 
     - run: pip install -U twine
 

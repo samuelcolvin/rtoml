@@ -40,6 +40,19 @@ Homepage = "https://github.com/samuelcolvin/rtoml"
 Funding = "https://github.com/sponsors/samuelcolvin"
 Source = "https://github.com/samuelcolvin/rtoml"
 
+[dependency-groups]
+dev = [
+    "coverage[toml]>=7.6.9",
+    "dirty-equals>=0.8.0",
+    "pytest>=8.3.4",
+    "pytest-pretty>=1.2.0",
+    "pytest-speed>=0.3.5",
+]
+lint = [
+    "mypy>=1.13.0",
+    "ruff>=0.8.2",
+]
+
 [tool.maturin]
 bindings = "pyo3"
 module-name = "rtoml._rtoml"
