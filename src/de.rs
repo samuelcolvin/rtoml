@@ -6,10 +6,10 @@ use std::str::FromStr;
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::IntoPyObjectExt;
 
 use ahash::RandomState;
 use nohash_hasher::NoHashHasher;
-use pyo3::IntoPyObjectExt;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use toml::value::Datetime as TomlDatetime;
 
@@ -52,28 +52,28 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
     where
         E: de::Error,
     {
-        Ok(value.into_py_any(self.py).unwrap())
+        value.into_py_any(self.py).map_err(de::Error::custom)
     }
 
     fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(value.into_py_any(self.py).unwrap())
+        value.into_py_any(self.py).map_err(de::Error::custom)
     }
 
     fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(value.into_py_any(self.py).unwrap())
+        value.into_py_any(self.py).map_err(de::Error::custom)
     }
 
     fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(value.into_py_any(self.py).unwrap())
+        value.into_py_any(self.py).map_err(de::Error::custom)
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
@@ -82,7 +82,7 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
     {
         match self.none_value {
             Some(none_value) if value == none_value => Ok(self.py.None()),
-            _ => Ok(value.into_py_any(self.py).unwrap()),
+            _ => value.into_py_any(self.py).map_err(de::Error::custom),
         }
     }
 
@@ -100,7 +100,7 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
             elements.push(elem);
         }
 
-        Ok(elements.into_py_any(self.py).unwrap())
+        elements.into_py_any(self.py).map_err(de::Error::custom)
     }
 
     fn visit_map<A>(self, mut map_access: A) -> Result<Self::Value, A::Error>
@@ -133,9 +133,9 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
                     }
                 }
 
-                Ok(dict.into_py_any(self.py).unwrap())
+                dict.into_py_any(self.py).map_err(de::Error::custom)
             }
-            None => Ok(PyDict::new(self.py).into_py_any(self.py).unwrap()),
+            None => PyDict::new(self.py).into_py_any(self.py).map_err(de::Error::custom),
         }
     }
 }

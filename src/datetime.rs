@@ -1,9 +1,10 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDelta, PyTime, PyTzInfo};
+use pyo3::IntoPyObjectExt;
 
 use toml::value::{Datetime as TomlDatetime, Offset as TomlOffset};
 
-pub fn parse<'py>(py: Python<'py>, datetime: &'py TomlDatetime) -> PyResult<PyObject> {
+pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<PyObject> {
     match (&datetime.date, &datetime.time) {
         (Some(date), Some(t)) => {
             let tz_info: Option<Bound<'_, PyTzInfo>> = match &datetime.offset {
@@ -28,15 +29,10 @@ pub fn parse<'py>(py: Python<'py>, datetime: &'py TomlDatetime) -> PyResult<PyOb
                 t.nanosecond / 1000,
                 tz_info.as_ref(),
             )?;
-            let dt = dt.into_pyobject(py)?;
-            Ok(dt.into())
+            Ok(dt.into_py_any(py)?)
         }
-        (Some(date), None) => Ok(PyDate::new(py, date.year as i32, date.month, date.day)?
-            .into_pyobject(py)?
-            .into()),
-        (None, Some(t)) => Ok(PyTime::new(py, t.hour, t.minute, t.second, t.nanosecond / 1000, None)?
-            .into_pyobject(py)?
-            .into()),
+        (Some(date), None) => Ok(PyDate::new(py, date.year as i32, date.month, date.day)?.into_py_any(py)?),
+        (None, Some(t)) => Ok(PyTime::new(py, t.hour, t.minute, t.second, t.nanosecond / 1000, None)?.into_py_any(py)?),
         (None, None) => {
             // AFAIK this can't actually happen
             unreachable!("either time or date (or both) are required")
