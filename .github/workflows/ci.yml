@@ -96,8 +96,11 @@ jobs:
         extra_args: --all-files --verbose
       env:
         SKIP: no-commit-to-branch
+        UV_NO_SYNC: '1'
 
     - run: make typecheck
+      env:
+        UV_NO_SYNC: '1'
 
   # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
   check:
