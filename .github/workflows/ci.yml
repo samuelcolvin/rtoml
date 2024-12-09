@@ -65,6 +65,7 @@ jobs:
         rm tests/invalid/integer-positive-hex.*
         go build ./cmd/toml-test
         cd ../
+        source .venv/bin/activate
         ./toml-test/toml-test ./tests/toml_test.py
 
     - uses: codecov/codecov-action@v3
