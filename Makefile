@@ -19,11 +19,11 @@ sync: .uv
 
 .PHONY: build-dev
 build-dev:
-	maturin develop
+	uv run maturin develop --uv
 
 .PHONY: build-prod
 build-prod:
-	maturin develop --release
+	uv run maturin develop --release --uv
 
 .PHONY: format
 format:
