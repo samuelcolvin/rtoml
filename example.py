@@ -34,7 +34,9 @@ enabled = true
 
 assert loaded_obj == obj
 
-assert rtoml.dumps(obj) == """\
+assert (
+    rtoml.dumps(obj)
+    == """\
 title = "TOML Example"
 
 [owner]
@@ -47,3 +49,4 @@ enabled = true
 server = "192.168.1.1"
 ports = [8001, 8001, 8002]
 """
+)

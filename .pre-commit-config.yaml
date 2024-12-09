@@ -4,6 +4,7 @@ repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.0.1
   hooks:
+  - id: no-commit-to-branch
   - id: check-yaml
   - id: check-toml
   - id: end-of-file-fixer
@@ -12,6 +13,12 @@ repos:
 
 - repo: local
   hooks:
+  - id: format
+    name: Format
+    entry: make format
+    types: [python, rust]
+    language: system
+    pass_filenames: false
   - id: lint-python
     name: Lint Python
     entry: make lint-python
