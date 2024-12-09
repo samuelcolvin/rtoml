@@ -1,6 +1,5 @@
 /target
 **/*.rs.bk
-/rtoml.so
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -14,7 +13,7 @@ __pycache__/
 /htmlcov/
 /.idea/
 /.vscode/
-/rtoml/*.so
+/python/rtoml/*.so
 .coverage
 .auto-format
 /toml-test/

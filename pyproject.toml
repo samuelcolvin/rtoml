@@ -54,6 +54,7 @@ lint = [
 ]
 
 [tool.maturin]
+python-source = "python"
 bindings = "pyo3"
 module-name = "rtoml._rtoml"
 features = ["pyo3/extension-module", "pyo3/generate-import-lib"]
@@ -80,8 +81,8 @@ exclude_lines = [
 
 [tool.ruff]
 line-length = 120
-extend-select = ["Q", "RUF100", "UP", "I"]
-flake8-quotes = {inline-quotes = "single", multiline-quotes = "double"}
+lint.extend-select = ["Q", "RUF100", "UP", "I"]
+lint.flake8-quotes = {inline-quotes = "single", multiline-quotes = "double"}
 format.quote-style="single"
 target-version = "py38"
 
