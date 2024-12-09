@@ -197,7 +197,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: pypi_files
+        name: pypi_files-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.interpreter || 'all' }}-${{ matrix.manylinux || 'auto' }}
         path: dist
 
   inspect-pypi-assets:
@@ -210,7 +210,8 @@ jobs:
       - name: get dist artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pypi_files
+          pattern: pypi_files-*
+          merge-multiple: true
           path: dist
 
       - name: list dist files
@@ -247,7 +248,8 @@ jobs:
       - name: get dist artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pypi_files
+          pattern: pypi_files-*
+          merge-multiple: true
           path: dist
 
       - run: ls -lh dist
