@@ -8,6 +8,7 @@ requires-python = ">=3.9"
 authors = [
     {name = "Samuel Colvin", email = "s@muelcolvin.com"}
 ]
+description = "A fast TOML library for Python implemented in Rust"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
