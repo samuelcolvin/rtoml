@@ -50,7 +50,7 @@ jobs:
 
     - name: run toml-test
       run: |
-        git clone --depth 1 --branch 1.5.0 https://github.com/toml-lang/toml-test
+        git clone --depth 1 --branch v1.5.0 https://github.com/toml-lang/toml-test
         cd toml-test
         # TODO, fix these tests
         rm tests/valid/datetime-local-date.*
