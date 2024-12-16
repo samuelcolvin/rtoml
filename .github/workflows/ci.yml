@@ -46,7 +46,7 @@ jobs:
 
     - uses: actions/setup-go@v5
       with:
-        go-version: latest
+        go-version: "1.23"
 
     - name: run toml-test
       run: |
