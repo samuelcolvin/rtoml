@@ -56,7 +56,7 @@ jobs:
         rm tests/valid/datetime/local-date.*
         rm tests/valid/datetime/local-time.*
         rm tests/valid/datetime/local.*
-        rm tests/valid/key/empty.*
+        rm tests/valid/key/empty*
         rm tests/invalid/control/comment-del.*
         rm tests/invalid/integer/positive-bin.*
         rm tests/invalid/integer/positive-hex.*
