@@ -53,13 +53,13 @@ jobs:
         git clone --depth 1 --branch v1.5.0 https://github.com/toml-lang/toml-test
         cd toml-test
         # TODO, fix these tests
-        rm tests/valid/datetime-local-date.*
-        rm tests/valid/datetime-local-time.*
-        rm tests/valid/datetime-local.*
-        rm tests/valid/key-empty.*
-        rm tests/invalid/control-comment-del.*
-        rm tests/invalid/integer-positive-bin.*
-        rm tests/invalid/integer-positive-hex.*
+        rm tests/valid/datetime/local-date.*
+        rm tests/valid/datetime/local-time.*
+        rm tests/valid/datetime/local.*
+        rm tests/valid/key/empty.*
+        rm tests/invalid/control/comment-del.*
+        rm tests/invalid/integer/positive-bin.*
+        rm tests/invalid/integer/positive-hex.*
         go build ./cmd/toml-test
         cd ../
         source .venv/bin/activate
