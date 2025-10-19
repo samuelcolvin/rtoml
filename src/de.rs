@@ -1,6 +1,4 @@
-use std::collections::HashSet;
 use std::fmt;
-use std::hash::BuildHasherDefault;
 use std::marker::PhantomData;
 use std::str::FromStr;
 
@@ -8,16 +6,13 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pyo3::IntoPyObjectExt;
 
-use ahash::RandomState;
-use nohash_hasher::NoHashHasher;
+use ahash::AHashSet;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use toml::value::Datetime as TomlDatetime;
 
 use crate::datetime;
 
 pub const DATETIME_MAPPING_KEY: &str = "$__toml_private_datetime";
-type BuildNoHashHasher<T> = BuildHasherDefault<NoHashHasher<T>>;
-pub type NoHashSet<T> = HashSet<T, BuildNoHashHasher<T>>;
 
 pub struct PyDeserializer<'py> {
     py: Python<'py>,
@@ -116,9 +111,8 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
             Some((first_key, first_value)) => {
                 // we use a hashset to check for duplicate keys, but to avoid cloning the keys, we hash manually
                 // and store that in a no-hash hashset
-                let hash_builder = RandomState::new();
-                let mut key_set = NoHashSet::<u64>::with_hasher(BuildHasherDefault::default());
-                key_set.insert(hash_builder.hash_one(&first_key));
+                let mut key_set = AHashSet::new();
+                key_set.insert(first_key.clone());
 
                 let dict = PyDict::new(self.py);
                 dict.set_item(first_key, first_value).map_err(de::Error::custom)?;
@@ -126,7 +120,7 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
                 while let Some((key, value)) =
                     map_access.next_entry_seed(PhantomData::<String>, PyDeserializer::new(self.py, self.none_value))?
                 {
-                    if key_set.insert(hash_builder.hash_one(&key)) {
+                    if key_set.insert(key.clone()) {
                         dict.set_item(key, value).map_err(de::Error::custom)?;
                     } else {
                         return Err(de::Error::custom(format!("duplicate key: `{key}`")));
