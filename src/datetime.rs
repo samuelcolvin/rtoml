@@ -4,7 +4,7 @@ use pyo3::IntoPyObjectExt;
 
 use toml::value::{Datetime as TomlDatetime, Offset as TomlOffset};
 
-pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<PyObject> {
+pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<Py<PyAny>> {
     match (&datetime.date, &datetime.time) {
         (Some(date), Some(t)) => {
             let tz_info: Option<Bound<'_, PyTzInfo>> = match &datetime.offset {

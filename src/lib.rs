@@ -17,7 +17,7 @@ create_exception!(_rtoml, TomlSerializationError, PyValueError);
 
 #[pyfunction]
 #[pyo3(signature = (toml_data, none_value=None))]
-fn deserialize(py: Python, toml_data: String, none_value: Option<&str>) -> PyResult<PyObject> {
+fn deserialize(py: Python, toml_data: String, none_value: Option<&str>) -> PyResult<Py<PyAny>> {
     let mut deserializer = Deserializer::new(&toml_data);
     let seed = de::PyDeserializer::new(py, none_value);
     seed.deserialize(&mut deserializer)

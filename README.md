@@ -20,7 +20,7 @@ coverage on python code. Other TOML libraries for python I tried all failed to p
 
 ## Install
 
-Requires `python>=3.9`, binaries are available from PyPI for Linux, macOS and Windows,
+Requires `python>=3.10`, binaries are available from PyPI for Linux, macOS and Windows,
 see [here](https://pypi.org/project/rtoml/#files).
 
 ```bash

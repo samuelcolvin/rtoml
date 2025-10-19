@@ -31,7 +31,7 @@ impl<'py> PyDeserializer<'py> {
 }
 
 impl<'de> DeserializeSeed<'de> for PyDeserializer<'_> {
-    type Value = PyObject;
+    type Value = Py<PyAny>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
@@ -42,7 +42,7 @@ impl<'de> DeserializeSeed<'de> for PyDeserializer<'_> {
 }
 
 impl<'de> Visitor<'de> for PyDeserializer<'_> {
-    type Value = PyObject;
+    type Value = Py<PyAny>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("any valid JSON value")

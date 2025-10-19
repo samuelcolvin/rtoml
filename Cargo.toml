@@ -6,8 +6,8 @@ edition = "2021"
 
 [dependencies]
 toml = {version = "0.5.9", features = ["preserve_order"]}
-serde = "1.0.126"
-pyo3 = "0.23.3"
+serde = "1.0.228"
+pyo3 = "0.26.0"
 ahash = "0.8.1"
 nohash-hasher = "0.2.0"
 
