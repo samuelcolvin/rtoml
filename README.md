@@ -7,7 +7,7 @@
 [![license](https://img.shields.io/github/license/samuelcolvin/rtoml.svg)](https://github.com/samuelcolvin/rtoml/blob/main/LICENSE)
 
 
-A better TOML library for python implemented in rust.
+A TOML library for python implemented in rust.
 
 ## Why Use rtoml
 

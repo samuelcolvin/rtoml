@@ -4,7 +4,10 @@ build-backend = "maturin"
 
 [project]
 name = "rtoml"
+description = "A TOML library for python implemented in rust."
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     {name = "Samuel Colvin", email = "s@muelcolvin.com"}
 ]
@@ -29,12 +32,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Internet",
 ]
-dynamic = [
-    "description",
-    "license",
-    "readme",
-    "version"
-]
+dynamic = ["readme", "version"]
 
 [project.urls]
 Homepage = "https://github.com/samuelcolvin/rtoml"

@@ -24,9 +24,9 @@ jobs:
       UV_PYTHON: ${{ matrix.python-version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
@@ -77,9 +77,9 @@ jobs:
       UV_PYTHON: "3.12"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
@@ -159,7 +159,7 @@ jobs:
 
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: set up python
         uses: actions/setup-python@v4
@@ -208,7 +208,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: get dist artifacts
         uses: actions/download-artifact@v4
@@ -246,7 +246,9 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v6
 
       - name: get dist artifacts
         uses: actions/download-artifact@v4
@@ -257,4 +259,4 @@ jobs:
 
       - run: ls -lh dist
 
-      - uses: pypa/gh-action-pypi-publish@v1.12.3
+      - run: uv publish --trusted-publishing always
