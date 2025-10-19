@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::sync::GILOnceCell;
+use pyo3::sync::PyOnceLock;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDict, PyFloat, PyInt, PyList, PyNone, PyString, PyTime, PyTuple,
 };
@@ -28,7 +28,7 @@ pub struct PyTypeLookup {
     pub time: usize,
 }
 
-static TYPE_LOOKUP: GILOnceCell<PyTypeLookup> = GILOnceCell::new();
+static TYPE_LOOKUP: PyOnceLock<PyTypeLookup> = PyOnceLock::new();
 
 impl PyTypeLookup {
     fn new(py: Python) -> Self {

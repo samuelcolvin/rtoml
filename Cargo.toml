@@ -3,12 +3,13 @@ name = "rtoml"
 version = "0.12.0"
 authors = ["Samuel Colvin <s@muelcolvin.com>"]
 edition = "2021"
+license = "MIT"
 
 [dependencies]
 toml = {version = "0.5.9", features = ["preserve_order"]}
-serde = "1.0.126"
-pyo3 = "0.23.3"
-ahash = "0.8.1"
+serde = "1.0.228"
+pyo3 = "0.26.0"
+ahash = "0.8.12"
 nohash-hasher = "0.2.0"
 
 [lib]

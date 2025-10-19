@@ -1,3 +1,4 @@
+import sys
 from datetime import date, datetime, time, timedelta, timezone
 
 import pytest
@@ -195,8 +196,12 @@ def test_datetime_tz_utc():
 
 
 def test_datetime_invalid():
-    with pytest.raises(rtoml.TomlParsingError, match='day is out of range for month'):
-        rtoml.load('date = 1979-02-30T07:32:00')
+    if sys.version_info >= (3, 14):
+        with pytest.raises(rtoml.TomlParsingError, match=r'day 30 must be in range 1\.\.28 for month 2 in year 1979'):
+            rtoml.load('date = 1979-02-30T07:32:00')
+    else:
+        with pytest.raises(rtoml.TomlParsingError, match='day is out of range for month'):
+            rtoml.load('date = 1979-02-30T07:32:00')
 
 
 def test_invalid_toml():

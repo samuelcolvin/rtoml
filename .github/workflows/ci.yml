@@ -5,11 +5,12 @@ on:
     branches:
       - main
     tags:
-      - '**'
+      - "**"
   pull_request: {}
 
 env:
   COLUMNS: 120
+  UV_PYTHON: "3.12"
 
 jobs:
   test:
@@ -18,89 +19,86 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     env:
       UV_PYTHON: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v3
-      with:
-        enable-cache: true
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
 
-    - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
 
-    - id: cache-rust
-      uses: Swatinem/rust-cache@v2
-      with:
-        key: v1
+      - id: cache-rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: v1
 
-    - run: uv sync --frozen
+      - run: uv sync --frozen
 
-    - run: make test
+      - run: make test
 
-    - run: ls -lha
-    - run: uv run coverage xml
+      - run: ls -lha
+      - run: uv run coverage xml
 
-    - uses: actions/setup-go@v1
-      with:
-        go-version: 1.16.x
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.16.x
 
-    - name: run toml-test
-      run: |
-        git clone --depth 1 --branch 1.0.0-beta2 https://github.com/BurntSushi/toml-test.git
-        cd toml-test
-        # TODO, fix these tests
-        rm tests/valid/datetime-local-date.*
-        rm tests/valid/datetime-local-time.*
-        rm tests/valid/datetime-local.*
-        rm tests/valid/key-empty.*
-        rm tests/invalid/control-comment-del.*
-        rm tests/invalid/integer-positive-bin.*
-        rm tests/invalid/integer-positive-hex.*
-        go build ./cmd/toml-test
-        cd ../
-        source .venv/bin/activate
-        ./toml-test/toml-test ./tests/toml_test.py
+      - name: run toml-test
+        run: |
+          git clone --depth 1 --branch 1.0.0-beta2 https://github.com/BurntSushi/toml-test.git
+          cd toml-test
+          # TODO, fix these tests
+          rm tests/valid/datetime-local-date.*
+          rm tests/valid/datetime-local-time.*
+          rm tests/valid/datetime-local.*
+          rm tests/valid/key-empty.*
+          rm tests/invalid/control-comment-del.*
+          rm tests/invalid/integer-positive-bin.*
+          rm tests/invalid/integer-positive-hex.*
+          go build ./cmd/toml-test
+          cd ../
+          source .venv/bin/activate
+          ./toml-test/toml-test ./tests/toml_test.py
 
-    - uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        env_vars: UV_PYTHON
+      - uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          env_vars: UV_PYTHON
 
   lint:
     runs-on: ubuntu-latest
 
-    env:
-      UV_PYTHON: 3.12
-
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v3
-      with:
-        enable-cache: true
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
 
-    - run: uv sync --frozen --group lint --no-dev --no-install-project
+      - run: uv sync --frozen --group lint --no-dev --no-install-project
 
-    - uses: dtolnay/rust-toolchain@stable
-      with:
-        components: rustfmt, clippy
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
-    - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
 
-    - uses: pre-commit/action@v3.0.0
-      with:
-        extra_args: --all-files --verbose
-      env:
-        SKIP: no-commit-to-branch
-        UV_NO_SYNC: '1'
+      - uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: --all-files --verbose
+        env:
+          SKIP: no-commit-to-branch
+          UV_NO_SYNC: "1"
 
-    - run: make typecheck
-      env:
-        UV_NO_SYNC: '1'
+      - run: make typecheck
+        env:
+          UV_NO_SYNC: "1"
 
   # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
   check:
@@ -155,60 +153,60 @@ jobs:
             python-architecture: x86
           - os: windows
             target: aarch64
-            interpreter: 3.11 3.12 3.13
+            interpreter: 3.11 3.12 3.13 3.14
 
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-    - name: set up python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        architecture: ${{ matrix.python-architecture || 'x64' }}
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+          architecture: ${{ matrix.python-architecture || 'x64' }}
 
-    - name: check GITHUB_REF matches package version
-      uses: samuelcolvin/check-python-version@v4.1
-      if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.os == 'ubuntu' }}
-      with:
-        version_file_path: Cargo.toml
+      - name: check GITHUB_REF matches package version
+        uses: samuelcolvin/check-python-version@v4.1
+        if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.os == 'ubuntu' }}
+        with:
+          version_file_path: Cargo.toml
 
-    - run: pip install -U twine
+      - run: pip install -U twine
 
-    - name: build sdist
-      if: ${{ matrix.os == 'linux' && matrix.target == 'x86_64' }}
-      uses: PyO3/maturin-action@v1
-      with:
-        command: sdist
-        args: --out dist
+      - name: build sdist
+        if: ${{ matrix.os == 'linux' && matrix.target == 'x86_64' }}
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
 
-    - name: build wheels
-      uses: PyO3/maturin-action@v1
-      with:
-        target: ${{ matrix.target }}
-        manylinux: ${{ matrix.manylinux || 'auto' }}
-        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12 3.13' }}
-        rust-toolchain: stable
-        docker-options: -e CI
-      env:
-        # see https://github.com/PyO3/maturin/issues/2110
-        XWIN_VERSION: '16'
+      - name: build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux || 'auto' }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.10 3.11 3.12 3.13 3.14' }}
+          rust-toolchain: stable
+          docker-options: -e CI
+        env:
+          # see https://github.com/PyO3/maturin/issues/2110
+          XWIN_VERSION: "16"
 
-    - run: ${{ (matrix.os == 'windows' && 'dir') || 'ls -lh' }} dist/
+      - run: ${{ (matrix.os == 'windows' && 'dir') || 'ls -lh' }} dist/
 
-    - run: twine check --strict dist/*
+      - run: twine check --strict dist/*
 
-    - uses: actions/upload-artifact@v4
-      with:
-        name: pypi_files-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.interpreter || 'all' }}-${{ matrix.manylinux || 'auto' }}
-        path: dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pypi_files-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.interpreter || 'all' }}-${{ matrix.manylinux || 'auto' }}
+          path: dist
 
   inspect-pypi-assets:
     needs: [build]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: get dist artifacts
         uses: actions/download-artifact@v4
@@ -219,22 +217,22 @@ jobs:
 
       - name: list dist files
         run: |
-         ls -lh dist/
-         echo "`ls dist | wc -l` files"
+          ls -lh dist/
+          echo "`ls dist | wc -l` files"
 
       - name: extract and list sdist file
         run: |
-         mkdir sdist-files
-         tar -xvf dist/*.tar.gz -C sdist-files
-         tree -a sdist-files
+          mkdir sdist-files
+          tar -xvf dist/*.tar.gz -C sdist-files
+          tree -a sdist-files
 
       - name: extract and list wheel file
         run: |
-         ls dist/*cp310-manylinux*x86_64.whl | head -n 1
-         python -m zipfile --list `ls dist/*cp310-manylinux*x86_64.whl | head -n 1`
+          ls dist/*cp310-manylinux*x86_64.whl | head -n 1
+          python -m zipfile --list `ls dist/*cp310-manylinux*x86_64.whl | head -n 1`
 
-      - run: pip install twine
-      - run: twine check dist/*
+      - uses: astral-sh/setup-uv@v6
+      - run: uvx twine check dist/*
 
   release:
     needs: [check, build, inspect-pypi-assets]
@@ -246,7 +244,9 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v6
 
       - name: get dist artifacts
         uses: actions/download-artifact@v4
@@ -257,4 +257,4 @@ jobs:
 
       - run: ls -lh dist
 
-      - uses: pypa/gh-action-pypi-publish@v1.12.3
+      - run: "uv publish --trusted-publishing always dist/*"
