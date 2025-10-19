@@ -1,14 +1,15 @@
 [package]
 name = "rtoml"
-version = "0.13.0"
+version = "0.12.0"
 authors = ["Samuel Colvin <s@muelcolvin.com>"]
 edition = "2021"
+license = "MIT"
 
 [dependencies]
 toml = {version = "0.5.9", features = ["preserve_order"]}
 serde = "1.0.228"
 pyo3 = "0.26.0"
-ahash = "0.8.1"
+ahash = "0.8.12"
 nohash-hasher = "0.2.0"
 
 [lib]

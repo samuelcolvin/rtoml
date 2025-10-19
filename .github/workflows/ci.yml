@@ -10,6 +10,7 @@ on:
 
 env:
   COLUMNS: 120
+  UV_PYTHON: "3.12"
 
 jobs:
   test:
@@ -72,9 +73,6 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
-
-    env:
-      UV_PYTHON: "3.12"
 
     steps:
       - uses: actions/checkout@v5
@@ -233,8 +231,8 @@ jobs:
           ls dist/*cp310-manylinux*x86_64.whl | head -n 1
           python -m zipfile --list `ls dist/*cp310-manylinux*x86_64.whl | head -n 1`
 
-      - run: pip install twine
-      - run: twine check dist/*
+      - uses: astral-sh/setup-uv@v6
+      - run: uvx twine check dist/*
 
   release:
     needs: [check, build, inspect-pypi-assets]
@@ -259,4 +257,4 @@ jobs:
 
       - run: ls -lh dist
 
-      - run: uv publish --trusted-publishing always
+      - run: "uv publish --trusted-publishing always dist/*"
