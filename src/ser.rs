@@ -16,6 +16,11 @@ use crate::py_type::PyTypeLookup;
 
 type Result<T> = std::result::Result<T, String>;
 
+/// Deepest nesting of tables, inline tables and arrays we'll write. Deeper structures, including ones that
+/// contain themselves, would otherwise overflow the stack and take the process down. The toml crate's parser
+/// refuses to read anything nested more than 80 deep, so this is already generous.
+const MAX_DEPTH: usize = 128;
+
 /// Serialize `obj` to a TOML string.
 ///
 /// A dict becomes a TOML document, anything else is written as a bare TOML value, `pretty` only affects
@@ -27,6 +32,7 @@ pub fn to_toml(py: Python<'_>, obj: &Bound<'_, PyAny>, none_value: Option<&str>,
         pretty: false,
         lookup,
         out: String::with_capacity(256),
+        depth: 0,
     };
     if obj.get_type_ptr() as usize == lookup.dict {
         writer.pretty = pretty;
@@ -44,6 +50,8 @@ struct Writer<'py> {
     pretty: bool,
     lookup: &'py PyTypeLookup,
     out: String,
+    /// how many tables, inline tables and arrays we're currently inside
+    depth: usize,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -67,6 +75,21 @@ macro_rules! err {
 }
 
 impl<'py> Writer<'py> {
+    /// Call on entering a table, inline table or array, must be paired with `leave` on the success path;
+    /// on error the writer is abandoned so there's nothing to restore.
+    fn enter(&mut self) -> Result<()> {
+        self.depth += 1;
+        if self.depth > MAX_DEPTH {
+            err!("TOML nesting too deep, the limit is {MAX_DEPTH} levels, does the object contain itself?")
+        } else {
+            Ok(())
+        }
+    }
+
+    fn leave(&mut self) {
+        self.depth -= 1;
+    }
+
     /// Split a dict into plain values, arrays and sub-dicts, in that order, dropping `None` entries when
     /// `none_value` is `None`. This order is what rtoml has always produced: values first, then arrays, then
     /// tables.
@@ -119,6 +142,7 @@ impl<'py> Writer<'py> {
     }
 
     fn write_table(&mut self, dict: &Bound<'py, PyDict>, path: &mut Vec<String>, kind: TableKind) -> Result<()> {
+        self.enter()?;
         let (simple, arrays, dicts) = self.partition(dict);
         let arrays: Vec<(Entry<'py>, bool)> = arrays
             .into_iter()
@@ -167,6 +191,7 @@ impl<'py> Writer<'py> {
             self.write_table(dict, path, TableKind::Table)?;
             path.pop();
         }
+        self.leave();
         Ok(())
     }
 
@@ -298,6 +323,7 @@ impl<'py> Writer<'py> {
 
     /// `{ a = 1, b = 2 }`, entries in the same order as a table: values, arrays, then dicts.
     fn write_inline_table(&mut self, dict: &Bound<'py, PyDict>) -> Result<()> {
+        self.enter()?;
         let (simple, arrays, dicts) = self.partition(dict);
         self.out.push('{');
         let mut seen = false;
@@ -315,6 +341,7 @@ impl<'py> Writer<'py> {
             self.out.push(' ');
         }
         self.out.push('}');
+        self.leave();
         Ok(())
     }
 
@@ -326,6 +353,7 @@ impl<'py> Writer<'py> {
         elements: impl Iterator<Item = T>,
         mut write_element: impl FnMut(&mut Self, T) -> Result<bool>,
     ) -> Result<()> {
+        self.enter()?;
         let multiline = self.pretty && len >= 2;
         self.out.push('[');
         let mut seen = false;
@@ -349,6 +377,7 @@ impl<'py> Writer<'py> {
             self.out.push('\n');
         }
         self.out.push(']');
+        self.leave();
         Ok(())
     }
 }

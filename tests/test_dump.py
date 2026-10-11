@@ -428,3 +428,36 @@ def test_dumps_structures(input_obj, none_value, pretty, output_toml):
     the direct writer must match it exactly.
     """
     assert rtoml.dumps(input_obj, pretty=pretty, none_value=none_value) == output_toml
+
+
+def nest(depth, kind):
+    obj = {} if kind == 'dict' else []
+    for _ in range(depth):
+        obj = {'a': obj} if kind == 'dict' else [obj]
+    return obj
+
+
+@pytest.mark.parametrize('kind', ['dict', 'list'])
+def test_dumps_nesting_limit(kind):
+    """Deep nesting raises rather than overflowing the stack, the limit counts every table and array."""
+    ok = nest(120, kind)
+    rtoml.dumps({'a': ok})
+    rtoml.dumps({'a': ok}, pretty=True)
+    rtoml.dumps({'a': [ok]}) if kind == 'dict' else rtoml.dumps({'a': [{'b': ok}]})
+    with pytest.raises(rtoml.TomlSerializationError, match='TOML nesting too deep, the limit is 128 levels'):
+        rtoml.dumps({'a': nest(200, kind)})
+    with pytest.raises(rtoml.TomlSerializationError, match='TOML nesting too deep'):
+        rtoml.dumps({'a': nest(100_000, kind)})
+
+
+def test_dumps_self_referential():
+    d = {}
+    d['self'] = d
+    with pytest.raises(rtoml.TomlSerializationError, match='does the object contain itself'):
+        rtoml.dumps(d)
+    lst = []
+    lst.append(lst)
+    with pytest.raises(rtoml.TomlSerializationError, match='does the object contain itself'):
+        rtoml.dumps({'a': lst})
+    with pytest.raises(rtoml.TomlSerializationError, match='does the object contain itself'):
+        rtoml.dumps({'a': [d, 1]})
