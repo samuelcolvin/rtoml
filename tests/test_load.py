@@ -1,3 +1,4 @@
+import math
 import sys
 from datetime import date, datetime, time, timedelta, timezone
 
@@ -244,3 +245,83 @@ def test_none_value():
     s = {'x': None}
     assert rtoml.dumps(s, none_value='py:None') == 'x = "py:None"\n'
     assert rtoml.loads('x = "py:None"\n', none_value='py:None') == s
+
+
+@pytest.mark.parametrize(
+    'input_toml,output_obj',
+    [
+        ('a = -1_000\nb = 0xff\nc = 0o17\nd = 0b101\ne = +7', {'a': -1000, 'b': 255, 'c': 15, 'd': 5, 'e': 7}),
+        ('a = 1e3\nb = -0.5\nc = 6.626e-34\nd = +1.0', {'a': 1000.0, 'b': -0.5, 'c': 6.626e-34, 'd': 1.0}),
+        ('a = inf\nb = -inf\nc = +inf', {'a': math.inf, 'b': -math.inf, 'c': math.inf}),
+        ('a = true\nb = false', {'a': True, 'b': False}),
+        ('', {}),
+        ('# just a comment', {}),
+        ('[a]', {'a': {}}),
+        ('a = {x = 1, y = {z = 2}}', {'a': {'x': 1, 'y': {'z': 2}}}),
+        ('a = {}', {'a': {}}),
+        ("a = 'C:\\path'\nb = '''\nmulti\n'''", {'a': 'C:\\path', 'b': 'multi\n'}),
+        (r'a = "\t\n\u00e9\U0001F637\\"', {'a': '\t\né😷\\'}),
+        ('a = 12:34:56.123456', {'a': time(12, 34, 56, 123456)}),
+        ('a = 12:34:56.1', {'a': time(12, 34, 56, 100000)}),
+        # nanoseconds are truncated to microseconds
+        ('a = 1979-05-27T07:32:00.123456789', {'a': datetime(1979, 5, 27, 7, 32, 0, 123456)}),
+        ('a = 1979-05-27T07:32:00.000000001', {'a': datetime(1979, 5, 27, 7, 32)}),
+        ('a = []', {'a': []}),
+        ('a = [[1, 2], []]', {'a': [[1, 2], []]}),
+    ],
+)
+def test_load_more(input_toml, output_obj):
+    assert rtoml.loads(input_toml) == output_obj
+
+
+def test_load_nan():
+    loaded = rtoml.loads('a = nan\nb = -nan')
+    assert math.isnan(loaded['a'])
+    assert math.isnan(loaded['b'])
+
+
+@pytest.mark.parametrize(
+    'input_toml,error',
+    [
+        ('a = 9223372036854775808', 'invalid number at line 1 column 5'),
+        ('a = 1\na = 2', 'duplicate key: `a`'),
+        ('[a]\n[a]', 'redefinition of table `a` for key `a` at line 2 column 1'),
+        ('a = "unterminated', 'unterminated string at line 1 column 5'),
+        ('a = 1979-02-30', 'day is out of range for month|day 30 must be in range'),
+        ('a = 25:00:00', 'failed to parse datetime for key `a` at line 1 column 5'),
+    ],
+)
+def test_load_errors(input_toml, error):
+    with pytest.raises(rtoml.TomlParsingError, match=error):
+        rtoml.loads(input_toml)
+
+
+def test_load_error_is_value_error():
+    with pytest.raises(ValueError):
+        rtoml.loads('x = y')
+
+
+def test_none_value_nested():
+    toml = """\
+a = ["n", 1, "n"]
+[b]
+c = "n"
+[[d]]
+e = "n"
+"""
+    assert rtoml.loads(toml, none_value='n') == {'a': [None, 1, None], 'b': {'c': None}, 'd': [{'e': None}]}
+    # keys are never affected
+    assert rtoml.loads('n = 1', none_value='n') == {'n': 1}
+
+
+def test_tzinfo():
+    d: datetime = rtoml.load('date = 1979-05-27T07:32:00-08:00')['date']
+    assert repr(d.tzinfo) == 'TzInfo(UTC-08:00)'
+    assert str(d.tzinfo) == 'UTC-08:00'
+    assert d.tzinfo.dst(d) is None
+    assert d.tzinfo.utcoffset(d) == timedelta(hours=-8)
+    assert d.utcoffset() == timedelta(hours=-8)
+
+    utc: datetime = rtoml.load('date = 1979-05-27T07:32:00Z')['date']
+    assert repr(utc.tzinfo) == 'TzInfo(UTC)'
+    assert utc.tzinfo.utcoffset(utc) == timedelta(0)
