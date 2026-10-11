@@ -13,7 +13,7 @@ pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<Py<PyAny>> {
                         TomlOffset::Z => TzInfo::new(0, 0),
                         TomlOffset::Custom { hours, minutes } => TzInfo::new(*hours, *minutes),
                     };
-                    Some(Bound::new(py, tz_info)?.into_any().downcast_into()?)
+                    Some(Bound::new(py, tz_info)?.into_any().cast_into()?)
                 }
                 None => None,
             };
