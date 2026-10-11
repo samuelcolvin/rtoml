@@ -1,12 +1,10 @@
 use std::fmt;
-use std::str::FromStr;
 
+use crate::datetime;
+use crate::py_type::PyTypeLookup;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyByteArray, PyDate, PyDateTime, PyDict, PyList, PyString, PyTime, PyTuple};
 use serde::ser::{Error as SerError, Serialize, SerializeMap, SerializeSeq, Serializer};
-use toml::value::Datetime;
-
-use crate::py_type::PyTypeLookup;
 
 pub struct SerializePyObject<'py> {
     obj: Bound<'py, PyAny>,
@@ -129,29 +127,14 @@ impl Serialize for SerializePyObject<'_> {
             seq.end()
         } else if ob_type == lookup.datetime {
             let py_dt: &Bound<'_, PyDateTime> = self.obj.cast().map_err(map_py_err)?;
-            let dt_pystr = py_dt.str().map_err(map_py_err)?;
-            let dt_str = dt_pystr.to_str().map_err(map_py_err)?;
-            let iso_str = dt_str.replacen("+00:00", "Z", 1);
-            match Datetime::from_str(&iso_str) {
-                Ok(dt) => dt.serialize(serializer),
-                Err(e) => serde_err!("unable to convert datetime string to TOML datetime object {:?}", e),
-            }
+            let dt = datetime::datetime_to_toml(py_dt).map_err(map_py_err)?;
+            dt.serialize(serializer)
         } else if ob_type == lookup.date {
             let py_date: &Bound<'_, PyDate> = self.obj.cast().map_err(map_py_err)?;
-            let date_pystr = py_date.str().map_err(map_py_err)?;
-            let date_str = date_pystr.to_str().map_err(map_py_err)?;
-            match Datetime::from_str(date_str) {
-                Ok(dt) => dt.serialize(serializer),
-                Err(e) => serde_err!("unable to convert date string to TOML date object {:?}", e),
-            }
+            datetime::date_only_to_toml(py_date).serialize(serializer)
         } else if ob_type == lookup.time {
             let py_time: &Bound<'_, PyTime> = self.obj.cast().map_err(map_py_err)?;
-            let time_pystr = py_time.str().map_err(map_py_err)?;
-            let time_str = time_pystr.to_str().map_err(map_py_err)?;
-            match Datetime::from_str(time_str) {
-                Ok(dt) => dt.serialize(serializer),
-                Err(e) => serde_err!("unable to convert time string to TOML time object {:?}", e),
-            }
+            datetime::time_only_to_toml(py_time).serialize(serializer)
         } else if ob_type == lookup.bytes {
             serialize!(&[u8])
         } else if ob_type == lookup.bytearray {

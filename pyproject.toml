@@ -45,6 +45,8 @@ dev = [
     "pytest>=8.3.4",
     "pytest-pretty>=1.2.0",
     "pytest-speed>=0.3.5",
+    # the tests use zoneinfo, which needs this on Windows
+    "tzdata>=2024.1",
 ]
 lint = [
     "mypy>=1.13.0",

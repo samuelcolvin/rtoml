@@ -1,6 +1,7 @@
 import math
 from collections import OrderedDict
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone, tzinfo
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -211,3 +212,68 @@ def test_dumps_big_int():
     assert rtoml.dumps({'a': 2**63, 'b': -(2**63) - 1, 'c': 2**127 - 1}) == (
         'a = 9223372036854775808\nb = -9223372036854775809\nc = 170141183460469231731687303715884105727\n'
     )
+
+
+class NoOffset(tzinfo):
+    """A tzinfo whose utcoffset is None, Python treats such datetimes as naive."""
+
+    def utcoffset(self, dt):
+        return None
+
+    def tzname(self, dt):
+        return 'no-offset'
+
+    def dst(self, dt):
+        return None
+
+
+@pytest.mark.parametrize(
+    'value,output_toml',
+    [
+        (datetime(2020, 7, 1, 12, tzinfo=ZoneInfo('Europe/London')), 'a = 2020-07-01T12:00:00+01:00\n'),
+        (datetime(2020, 1, 1, 12, tzinfo=ZoneInfo('Europe/London')), 'a = 2020-01-01T12:00:00Z\n'),
+        (datetime(2020, 1, 1, 12, tzinfo=ZoneInfo('Asia/Kolkata')), 'a = 2020-01-01T12:00:00+05:30\n'),
+        (datetime(2020, 1, 1, 12, tzinfo=timezone(timedelta(minutes=-30))), 'a = 2020-01-01T12:00:00-00:30\n'),
+        (datetime(2020, 1, 1, 12, tzinfo=timezone(timedelta(hours=23, minutes=59))), 'a = 2020-01-01T12:00:00+23:59\n'),
+        (
+            datetime(2020, 1, 1, 12, tzinfo=timezone(-timedelta(hours=23, minutes=59))),
+            'a = 2020-01-01T12:00:00-23:59\n',
+        ),
+        (datetime(2020, 1, 1, 12, tzinfo=NoOffset()), 'a = 2020-01-01T12:00:00\n'),
+        (datetime(1, 1, 1), 'a = 0001-01-01T00:00:00\n'),
+        (datetime(9999, 12, 31, 23, 59, 59, 999999), 'a = 9999-12-31T23:59:59.999999\n'),
+        (datetime(2020, 1, 1, 12, 0, 0, 100000), 'a = 2020-01-01T12:00:00.1\n'),
+        # TOML has no time with an offset, so the tzinfo is dropped
+        (time(12, 30, tzinfo=timezone.utc), 'a = 12:30:00\n'),
+        (time(12, 30, 0, 7), 'a = 12:30:00.000007\n'),
+        (date(1, 1, 1), 'a = 0001-01-01\n'),
+    ],
+)
+def test_dumps_datetimes(value, output_toml):
+    assert rtoml.dumps({'a': value}) == output_toml
+
+
+def test_dumps_rtoml_tzinfo():
+    """datetimes loaded by rtoml carry its own TzInfo, which has a fast path when dumping."""
+    loaded = rtoml.loads('a = 2020-01-01T12:00:00-08:00\nb = 2020-01-01T12:00:00Z')
+    assert type(loaded['a'].tzinfo).__name__ == 'TzInfo'
+    assert rtoml.dumps(loaded) == 'a = 2020-01-01T12:00:00-08:00\nb = 2020-01-01T12:00:00Z\n'
+
+
+def test_dumps_sub_minute_offset():
+    dt = datetime(2020, 1, 1, tzinfo=timezone(timedelta(seconds=30)))
+    with pytest.raises(
+        rtoml.TomlSerializationError, match='TOML offsets must be a whole number of minutes, got 0:00:30'
+    ):
+        rtoml.dumps({'a': dt})
+
+
+class BadOffset(tzinfo):
+    def utcoffset(self, dt):
+        return timedelta(hours=24)
+
+
+def test_dumps_out_of_range_offset():
+    """Python itself rejects offsets of 24 hours or more, make sure that check isn't bypassed."""
+    with pytest.raises(rtoml.TomlSerializationError, match='ValueError: offset must be a timedelta strictly between'):
+        rtoml.dumps({'a': datetime(2020, 1, 1, tzinfo=BadOffset())})
