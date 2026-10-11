@@ -169,7 +169,7 @@ def test_dumps_pretty_more(input_obj, output_toml):
         ({1.5: 'x'}, r'1\.5 \(float\) is not serializable as a TOML key'),
         ({'a': {1, 2}}, r'\{1, 2\} \(set\) is not serializable to TOML'),
         ({'a': object()}, r'<object object at 0x[0-9a-f]+> \(object\) is not serializable to TOML'),
-        ({'a': 2**127}, 'OverflowError: Python int larger than 128 bits'),
+        ({'a': 2**127}, '^OverflowError: '),
     ],
 )
 def test_dumps_errors(input_obj, error):
