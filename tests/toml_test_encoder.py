@@ -11,7 +11,7 @@ ROOT_DIR = (Path(__file__).parent / '..').resolve()
 
 sys.path.append(str(ROOT_DIR))
 
-import rtoml  # noqa
+import rtoml
 
 
 def parse_time_part(s: str):
@@ -35,9 +35,7 @@ def restore(value):
         return float(v.replace('inf', 'inf').replace('nan', 'nan'))
     elif t == 'bool':
         return v == 'true'
-    elif t == 'datetime':
-        return datetime.fromisoformat(parse_time_part(v.replace(' ', 'T').replace('t', 'T')))
-    elif t == 'datetime-local':
+    elif t == 'datetime' or t == 'datetime-local':
         return datetime.fromisoformat(parse_time_part(v.replace(' ', 'T').replace('t', 'T')))
     elif t == 'date-local':
         return date.fromisoformat(v)
