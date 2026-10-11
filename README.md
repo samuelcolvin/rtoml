@@ -34,7 +34,7 @@ installed before you can install rtoml.
 
 #### load
 ```python
-def load(toml: Union[str, Path, TextIO], *, none_value: Optional[str] = None) -> Dict[str, Any]: ...
+def load(toml: str | Path | TextIO, *, none_value: str | None = None) -> Dict[str, Any]: ...
 ```
 
 Parse TOML via a string or file and return a python dictionary.
@@ -44,7 +44,7 @@ Parse TOML via a string or file and return a python dictionary.
 
 #### loads
 ```python
-def loads(toml: str, *, none_value: Optional[str] = None) -> Dict[str, Any]: ...
+def loads(toml: str, *, none_value: str | None = None) -> Dict[str, Any]: ...
 ```
 
 Parse a TOML string and return a python dictionary. (provided to match the interface of `json` and similar libraries)
@@ -54,7 +54,7 @@ Parse a TOML string and return a python dictionary. (provided to match the inter
 
 #### dumps
 ```python
-def dumps(obj: Any, *, pretty: bool = False, none_value: Optional[str] = "null") -> str: ...
+def dumps(obj: Any, *, pretty: bool = False, none_value: str | None = "null") -> str: ...
 ```
 
 Serialize a python object to TOML.
@@ -66,7 +66,7 @@ Serialize a python object to TOML.
 #### dump
 ```python
 def dump(
-    obj: Any, file: Union[Path, TextIO], *, pretty: bool = False, none_value: Optional[str] = "null"
+    obj: Any, file: Path | TextIO, *, pretty: bool = False, none_value: str | None = "null"
 ) -> int: ...
 ```
 
