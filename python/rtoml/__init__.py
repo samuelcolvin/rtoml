@@ -1,10 +1,10 @@
 from io import TextIOBase
 from pathlib import Path
-from typing import Any, Optional, TextIO, Union
+from typing import Any, TextIO
 
 from . import _rtoml
 
-__all__ = '__version__', 'TomlParsingError', 'TomlSerializationError', 'load', 'loads', 'dumps', 'dump'
+__all__ = 'TomlParsingError', 'TomlSerializationError', '__version__', 'dump', 'dumps', 'load', 'loads'
 
 # VERSION is set in Cargo.toml
 VERSION = _rtoml.__version__
@@ -13,7 +13,7 @@ TomlParsingError = _rtoml.TomlParsingError
 TomlSerializationError = _rtoml.TomlSerializationError
 
 
-def load(toml: Union[str, Path, TextIO], *, none_value: Optional[str] = None) -> dict[str, Any]:
+def load(toml: str | Path | TextIO, *, none_value: str | None = None) -> dict[str, Any]:
     """
     Parse TOML via a string or file and return a python dict.
 
@@ -30,7 +30,7 @@ def load(toml: Union[str, Path, TextIO], *, none_value: Optional[str] = None) ->
     return loads(toml, none_value=none_value)
 
 
-def loads(toml: str, *, none_value: Optional[str] = None) -> dict[str, Any]:
+def loads(toml: str, *, none_value: str | None = None) -> dict[str, Any]:
     """
     Parse a TOML string and return a python dict. (provided to match the interface of `json` and similar libraries)
 
@@ -44,7 +44,7 @@ def loads(toml: str, *, none_value: Optional[str] = None) -> dict[str, Any]:
     return _rtoml.deserialize(toml, none_value=none_value)
 
 
-def dumps(obj: Any, *, pretty: bool = False, none_value: Optional[str] = 'null') -> str:
+def dumps(obj: Any, *, pretty: bool = False, none_value: str | None = 'null') -> str:
     """
     Serialize a python object to TOML.
 
@@ -62,7 +62,7 @@ def dumps(obj: Any, *, pretty: bool = False, none_value: Optional[str] = 'null')
     return serialize(obj, none_value=none_value)
 
 
-def dump(obj: Any, file: Union[Path, TextIO], *, pretty: bool = False, none_value: Optional[str] = 'null') -> int:
+def dump(obj: Any, file: Path | TextIO, *, pretty: bool = False, none_value: str | None = 'null') -> int:
     """
     Serialize a python object to TOML and write it to a file.
 

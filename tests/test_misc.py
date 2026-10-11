@@ -1,3 +1,4 @@
+import math
 from datetime import datetime, timedelta, timezone
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
@@ -57,7 +58,7 @@ def _strip_nan(value):
         return {k: _strip_nan(v) for k, v in value.items()}
     elif isinstance(value, list):
         return [_strip_nan(v) for v in value]
-    elif isinstance(value, float) and value != value:
+    elif isinstance(value, float) and math.isnan(value):
         # a tuple can never come out of the parser, so this cannot collide with a real value
         return ('nan',)
     return value
