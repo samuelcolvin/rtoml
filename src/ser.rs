@@ -2,7 +2,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDate, PyDateTime, PyDict, PyList, PyString, PyTime, PyTuple};
+use pyo3::types::{PyAny, PyByteArray, PyDate, PyDateTime, PyDict, PyList, PyString, PyTime, PyTuple};
 use serde::ser::{Error as SerError, Serialize, SerializeMap, SerializeSeq, Serializer};
 use toml::value::Datetime;
 
@@ -149,8 +149,11 @@ impl Serialize for SerializePyObject<'_> {
                 Ok(dt) => dt.serialize(serializer),
                 Err(e) => serde_err!("unable to convert time string to TOML time object {:?}", e),
             }
-        } else if ob_type == lookup.bytes || ob_type == lookup.bytearray {
+        } else if ob_type == lookup.bytes {
             serialize!(&[u8])
+        } else if ob_type == lookup.bytearray {
+            let py_bytearray: &Bound<'_, PyByteArray> = self.obj.cast().map_err(map_py_err)?;
+            py_bytearray.to_vec().serialize(serializer)
         } else {
             serde_err!("{} is not serializable to TOML", any_repr(&self.obj))
         }

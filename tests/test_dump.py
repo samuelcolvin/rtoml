@@ -1,4 +1,6 @@
-from datetime import date, datetime, time, timezone
+import math
+from collections import OrderedDict
+from datetime import date, datetime, time, timedelta, timezone
 
 import pytest
 
@@ -31,16 +33,18 @@ import rtoml
 def test_dumps(input_obj, output_toml):
     assert rtoml.dumps(input_obj, none_value='!NONE') == output_toml
 
-    @pytest.mark.parametrize(
-        'input_obj,output_toml',
-        [
-            ([1, 2, None], '[1, 2]'),
-            ((1, 2, None), '[1, 2]'),
-            (None, 'null'),
-        ],
-    )
-    def test_dumps_no_none(input_obj, output_toml):
-        assert rtoml.dumps(input_obj, none_value=None) == output_toml
+
+@pytest.mark.parametrize(
+    'input_obj,output_toml',
+    [
+        ([1, 2, None], '[1, 2]'),
+        ((1, 2, None), '[1, 2]'),
+        # TOML has no null, so a top-level None can only become a string
+        (None, '"null"'),
+    ],
+)
+def test_dumps_no_none(input_obj, output_toml):
+    assert rtoml.dumps(input_obj, none_value=None) == output_toml
 
 
 @pytest.mark.parametrize(
@@ -108,3 +112,92 @@ def test_varied_list():
 )
 def test_none_value(input_obj, none_value, output_toml):
     assert rtoml.dumps(input_obj, none_value=none_value) == output_toml
+
+
+@pytest.mark.parametrize(
+    'input_obj,output_toml',
+    [
+        ({'a': True, 'b': False}, 'a = true\nb = false\n'),
+        ({'a': 1.5}, 'a = 1.5\n'),
+        ({'a': -3}, 'a = -3\n'),
+        ({'a': 0}, 'a = 0\n'),
+        ({'a': math.inf, 'b': -math.inf, 'c': math.nan}, 'a = inf\nb = -inf\nc = nan\n'),
+        ({'a': bytearray(b'hi')}, 'a = [104, 105]\n'),
+        ({'a': {}, 'b': []}, 'b = []\n\n[a]\n'),
+        ({'a b': 1, '': 2, 'ü': 3, 'a.b': 4}, '"a b" = 1\n"" = 2\n"ü" = 3\n"a.b" = 4\n'),
+        ({'a': 'he said "hi"\t\\'}, 'a = "he said \\"hi\\"\\t\\\\"\n'),
+        ({'a': [{'x': 1}, {'x': 2}]}, '[[a]]\nx = 1\n\n[[a]]\nx = 2\n'),
+        ({'a': {'b': {'c': 1}}}, '[a.b]\nc = 1\n'),
+        (
+            {'a': datetime(2020, 1, 1, tzinfo=timezone(timedelta(hours=5, minutes=30)))},
+            'a = 2020-01-01T00:00:00+05:30\n',
+        ),
+        ({'a': datetime(2020, 1, 1, 0, 0, 0, 5)}, 'a = 2020-01-01T00:00:00.000005\n'),
+        (1.5, '1.5'),
+        (True, 'true'),
+        ('foo', '"foo"'),
+    ],
+)
+def test_dumps_more(input_obj, output_toml):
+    assert rtoml.dumps(input_obj) == output_toml
+
+
+def test_dumps_bool_key():
+    assert rtoml.dumps({True: 1, False: 2}) == 'true = 1\nfalse = 2\n'
+
+
+@pytest.mark.parametrize(
+    'input_obj,output_toml',
+    [
+        ({'a': None, 'b': [None, 1]}, "a = 'N'\nb = [\n    'N',\n    1,\n]\n"),
+        ({'a': {'b': {'c': 1}}, 'l': [{'x': 1}]}, '[[l]]\nx = 1\n[a.b]\nc = 1\n'),
+        (1, '1'),
+    ],
+)
+def test_dumps_pretty_more(input_obj, output_toml):
+    assert rtoml.dumps(input_obj, pretty=True, none_value='N') == output_toml
+
+
+@pytest.mark.parametrize(
+    'input_obj,error',
+    [
+        ({1: 'x'}, r'1 \(int\) is not serializable as a TOML key'),
+        ({1.5: 'x'}, r'1\.5 \(float\) is not serializable as a TOML key'),
+        ({'a': {1, 2}}, r'\{1, 2\} \(set\) is not serializable to TOML'),
+        ({'a': object()}, r'<object object at 0x[0-9a-f]+> \(object\) is not serializable to TOML'),
+        ({'a': 2**63}, 'OverflowError: Python int too large to convert to C long'),
+    ],
+)
+def test_dumps_errors(input_obj, error):
+    with pytest.raises(rtoml.TomlSerializationError, match=error):
+        rtoml.dumps(input_obj)
+
+
+def test_dumps_error_is_value_error():
+    with pytest.raises(ValueError):
+        rtoml.dumps({'a': object()})
+
+
+class StrSubclass(str):
+    pass
+
+
+@pytest.mark.parametrize(
+    'input_obj,error',
+    [
+        ({'a': OrderedDict(x=1)}, r'OrderedDict\(\{\'x\': 1\}\) \(OrderedDict\) is not serializable to TOML'),
+        ({'a': StrSubclass('v')}, r"'v' \(StrSubclass\) is not serializable to TOML"),
+    ],
+)
+def test_dumps_subclasses_not_supported(input_obj, error):
+    """
+    Types are matched by exact type pointer for speed, so subclasses of supported types are rejected.
+    """
+    with pytest.raises(rtoml.TomlSerializationError, match=error):
+        rtoml.dumps(input_obj)
+
+
+@pytest.mark.xfail(reason='toml-rs 0.5 emits invalid TOML for arrays mixing tables and scalars', strict=True)
+def test_dumps_mixed_table_scalar_array():
+    output = rtoml.dumps({'a': [{'x': 1}, 2]})
+    assert rtoml.loads(output) == {'a': [{'x': 1}, 2]}
