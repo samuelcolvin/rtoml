@@ -72,7 +72,10 @@ impl Serialize for SerializePyObject<'_> {
         if ob_type == lookup.none {
             serializer.serialize_str(self.none_value.unwrap_or("null"))
         } else if ob_type == lookup.int {
-            serialize!(i64)
+            match self.obj.extract::<i64>() {
+                Ok(v) => v.serialize(serializer),
+                Err(_) => serialize!(i128),
+            }
         } else if ob_type == lookup.bool {
             serialize!(bool)
         } else if ob_type == lookup.float {

@@ -10,7 +10,7 @@ import rtoml
 @pytest.mark.parametrize(
     'input_obj,output_toml',
     [
-        ({'text': '\nfoo\nbar\n'}, 'text = "\\nfoo\\nbar\\n"\n'),
+        ({'text': '\nfoo\nbar\n'}, 'text = """\n\nfoo\nbar\n"""\n'),
         ({'foo': 'bar'}, 'foo = "bar"\n'),
         (None, '"!NONE"'),
         ([1, 2, 3], '[1, 2, 3]'),
@@ -50,10 +50,12 @@ def test_dumps_no_none(input_obj, output_toml):
 @pytest.mark.parametrize(
     'input_obj,output_toml',
     [
-        ({'text': '\nfoo\nbar\n'}, "text = '''\n\nfoo\nbar\n'''\n"),
-        ({'foo': 'bar'}, "foo = 'bar'\n"),
-        ([1, 2, 3], '[\n    1,\n    2,\n    3,\n]'),
-        ((1, 2, 3), '[\n    1,\n    2,\n    3,\n]'),
+        ({'text': '\nfoo\nbar\n'}, 'text = """\n\nfoo\nbar\n"""\n'),
+        ({'foo': 'bar'}, 'foo = "bar"\n'),
+        ({'a': [1, 2, 3]}, 'a = [\n    1,\n    2,\n    3,\n]\n'),
+        # a bare top-level value is not a TOML document, so pretty has no effect
+        ([1, 2, 3], '[1, 2, 3]'),
+        ((1, 2, 3), '[1, 2, 3]'),
     ],
 )
 def test_dumps_pretty(input_obj, output_toml):
@@ -125,7 +127,9 @@ def test_none_value(input_obj, none_value, output_toml):
         ({'a': bytearray(b'hi')}, 'a = [104, 105]\n'),
         ({'a': {}, 'b': []}, 'b = []\n\n[a]\n'),
         ({'a b': 1, '': 2, 'ü': 3, 'a.b': 4}, '"a b" = 1\n"" = 2\n"ü" = 3\n"a.b" = 4\n'),
-        ({'a': 'he said "hi"\t\\'}, 'a = "he said \\"hi\\"\\t\\\\"\n'),
+        # strings containing double quotes but no single quotes are written as literal strings
+        ({'a': 'he said "hi"\t\\'}, 'a = \'he said "hi"\t\\\'\n'),
+        ({'a': "it's"}, 'a = "it\'s"\n'),
         ({'a': [{'x': 1}, {'x': 2}]}, '[[a]]\nx = 1\n\n[[a]]\nx = 2\n'),
         ({'a': {'b': {'c': 1}}}, '[a.b]\nc = 1\n'),
         (
@@ -149,8 +153,8 @@ def test_dumps_bool_key():
 @pytest.mark.parametrize(
     'input_obj,output_toml',
     [
-        ({'a': None, 'b': [None, 1]}, "a = 'N'\nb = [\n    'N',\n    1,\n]\n"),
-        ({'a': {'b': {'c': 1}}, 'l': [{'x': 1}]}, '[[l]]\nx = 1\n[a.b]\nc = 1\n'),
+        ({'a': None, 'b': [None, 1]}, 'a = "N"\nb = [\n    "N",\n    1,\n]\n'),
+        ({'a': {'b': {'c': 1}}, 'l': [{'x': 1}]}, '[[l]]\nx = 1\n\n[a.b]\nc = 1\n'),
         (1, '1'),
     ],
 )
@@ -165,7 +169,7 @@ def test_dumps_pretty_more(input_obj, output_toml):
         ({1.5: 'x'}, r'1\.5 \(float\) is not serializable as a TOML key'),
         ({'a': {1, 2}}, r'\{1, 2\} \(set\) is not serializable to TOML'),
         ({'a': object()}, r'<object object at 0x[0-9a-f]+> \(object\) is not serializable to TOML'),
-        ({'a': 2**63}, 'OverflowError: Python int too large to convert to C long'),
+        ({'a': 2**127}, '^OverflowError: '),
     ],
 )
 def test_dumps_errors(input_obj, error):
@@ -197,7 +201,13 @@ def test_dumps_subclasses_not_supported(input_obj, error):
         rtoml.dumps(input_obj)
 
 
-@pytest.mark.xfail(reason='toml-rs 0.5 emits invalid TOML for arrays mixing tables and scalars', strict=True)
 def test_dumps_mixed_table_scalar_array():
     output = rtoml.dumps({'a': [{'x': 1}, 2]})
+    assert output == 'a = [{ x = 1 }, 2]\n'
     assert rtoml.loads(output) == {'a': [{'x': 1}, 2]}
+
+
+def test_dumps_big_int():
+    assert rtoml.dumps({'a': 2**63, 'b': -(2**63) - 1, 'c': 2**127 - 1}) == (
+        'a = 9223372036854775808\nb = -9223372036854775809\nc = 170141183460469231731687303715884105727\n'
+    )

@@ -27,11 +27,13 @@ def simplify(value):
     elif isinstance(value, float):
         return {'type': 'float', 'value': repr(value)}
     elif isinstance(value, datetime):
+        if value.tzinfo is None:
+            return {'type': 'datetime-local', 'value': value.isoformat()}
         return {'type': 'datetime', 'value': value.isoformat().replace('+00:00', 'Z')}
     elif isinstance(value, date):
-        return {'type': 'date', 'value': value.isoformat()}
+        return {'type': 'date-local', 'value': value.isoformat()}
     elif isinstance(value, time):
-        return {'type': 'time', 'value': value.strftime('%H:%M:%S.%f')}
+        return {'type': 'time-local', 'value': value.isoformat()}
     assert False, f'Unknown type: {type(value)}'
 
 

@@ -1,12 +1,10 @@
 use std::fmt;
-use std::marker::PhantomData;
 use std::str::FromStr;
 
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyString};
 use pyo3::IntoPyObjectExt;
 
-use ahash::AHashSet;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use toml::value::Datetime as TomlDatetime;
 
@@ -40,7 +38,7 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
     type Value = Py<PyAny>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("any valid JSON value")
+        formatter.write_str("any valid TOML value")
     }
 
     fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>
@@ -58,6 +56,20 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
     }
 
     fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        value.into_py_any(self.py).map_err(de::Error::custom)
+    }
+
+    fn visit_i128<E>(self, value: i128) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        value.into_py_any(self.py).map_err(de::Error::custom)
+    }
+
+    fn visit_u128<E>(self, value: u128) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
@@ -102,27 +114,23 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
     where
         A: MapAccess<'de>,
     {
-        match map_access.next_entry_seed(PhantomData::<String>, PyDeserializer::new(self.py, self.none_value))? {
-            Some((first_key, first_value)) if first_key == DATETIME_MAPPING_KEY => {
+        let value_seed = || PyDeserializer::new(self.py, self.none_value);
+        match map_access.next_entry_seed(PyKeySeed(self.py), value_seed())? {
+            Some((first_key, first_value)) if first_key.to_cow().ok().as_deref() == Some(DATETIME_MAPPING_KEY) => {
                 let py_string = first_value.extract::<&str>(self.py).map_err(de::Error::custom)?;
                 let dt: TomlDatetime = TomlDatetime::from_str(py_string).map_err(de::Error::custom)?;
                 Ok(datetime::parse(self.py, &dt).map_err(de::Error::custom)?)
             }
             Some((first_key, first_value)) => {
-                // we use a hashset to check for duplicate keys, but to avoid cloning the keys, we hash manually
-                // and store that in a no-hash hashset
-                let mut key_set = AHashSet::new();
-                key_set.insert(first_key.clone());
-
                 let dict = PyDict::new(self.py);
                 dict.set_item(first_key, first_value).map_err(de::Error::custom)?;
 
-                while let Some((key, value)) =
-                    map_access.next_entry_seed(PhantomData::<String>, PyDeserializer::new(self.py, self.none_value))?
-                {
-                    if key_set.insert(key.clone()) {
-                        dict.set_item(key, value).map_err(de::Error::custom)?;
-                    } else {
+                while let Some((key, value)) = map_access.next_entry_seed(PyKeySeed(self.py), value_seed())? {
+                    // toml-rs doesn't check for duplicate keys on this code path, so we have to;
+                    // if the dict didn't grow, the key was already there
+                    let len = dict.len();
+                    dict.set_item(&key, value).map_err(de::Error::custom)?;
+                    if dict.len() == len {
                         return Err(de::Error::custom(format!("duplicate key: `{key}`")));
                     }
                 }
@@ -131,5 +139,34 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
             }
             None => PyDict::new(self.py).into_py_any(self.py).map_err(de::Error::custom),
         }
+    }
+}
+
+/// Deserializes a map key straight into a Python string, avoiding an intermediate Rust `String`.
+struct PyKeySeed<'py>(Python<'py>);
+
+impl<'de, 'py> DeserializeSeed<'de> for PyKeySeed<'py> {
+    type Value = Bound<'py, PyString>;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(self)
+    }
+}
+
+impl<'de, 'py> Visitor<'de> for PyKeySeed<'py> {
+    type Value = Bound<'py, PyString>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a string key")
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(PyString::new(self.0, value))
     }
 }
