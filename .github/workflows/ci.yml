@@ -45,9 +45,9 @@ jobs:
       - run: ls -lha
       - run: uv run coverage xml
 
-      - uses: actions/setup-go@v1
+      - uses: actions/setup-go@v5
         with:
-          go-version: 1.16.x
+          go-version: stable
 
       - name: run toml-test
         run: |
