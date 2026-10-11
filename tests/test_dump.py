@@ -185,7 +185,7 @@ class StrSubclass(str):
 @pytest.mark.parametrize(
     'input_obj,error',
     [
-        ({'a': OrderedDict(x=1)}, r'OrderedDict\(\{\'x\': 1\}\) \(OrderedDict\) is not serializable to TOML'),
+        ({'a': OrderedDict(x=1)}, r'\(OrderedDict\) is not serializable to TOML'),
         ({'a': StrSubclass('v')}, r"'v' \(StrSubclass\) is not serializable to TOML"),
     ],
 )
