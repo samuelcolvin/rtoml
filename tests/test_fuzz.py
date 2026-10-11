@@ -8,11 +8,13 @@ import math
 from datetime import datetime, timedelta, timezone
 
 import pytest
-import tomllib
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 import rtoml
+
+# tomllib was added in Python 3.11
+tomllib = pytest.importorskip('tomllib')
 
 pytestmark = pytest.mark.filterwarnings('ignore::pytest.PytestUnraisableExceptionWarning')
 
