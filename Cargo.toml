@@ -9,7 +9,6 @@ license = "MIT"
 toml = {version = "0.5.11", features = ["preserve_order"]}
 serde = "1.0.228"
 pyo3 = "0.29.3"
-ahash = "0.8.12"
 
 [lib]
 name = "_rtoml"
