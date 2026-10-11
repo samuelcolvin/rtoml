@@ -3,11 +3,7 @@ use pyo3::prelude::*;
 use pyo3::{create_exception, wrap_pyfunction};
 
 use serde::de::DeserializeSeed;
-use serde::Serialize;
-use toml::{to_string as to_toml_string, to_string_pretty as to_toml_string_pretty, Deserializer};
-
-use crate::py_type::PyTypeLookup;
-use crate::ser::SerializePyObject;
+use toml::Deserializer;
 
 mod datetime;
 mod de;
@@ -40,33 +36,16 @@ fn parsing_error(e: toml::de::Error, toml_data: &str) -> PyErr {
     TomlParsingError::new_err(msg)
 }
 
-/// Serialize `obj`, a top-level dict becomes a TOML document, anything else is written as a bare TOML value.
-fn serialize_any(py: Python, obj: Bound<'_, PyAny>, none_value: Option<&str>, pretty: bool) -> PyResult<String> {
-    let is_dict = obj.get_type_ptr() as usize == PyTypeLookup::cached(py).dict;
-    let s = SerializePyObject::new(py, obj, none_value);
-    let result = if !is_dict {
-        let mut output = String::new();
-        // the Ok value borrows `output`, drop it before handing `output` back
-        let result = s.serialize(toml::ser::ValueSerializer::new(&mut output)).map(|_| ());
-        result.map(|()| output)
-    } else if pretty {
-        to_toml_string_pretty(&s)
-    } else {
-        to_toml_string(&s)
-    };
-    result.map_err(|e| TomlSerializationError::new_err(e.to_string()))
-}
-
 #[pyfunction]
 #[pyo3(signature = (obj, none_value=None))]
 fn serialize(py: Python, obj: Bound<'_, PyAny>, none_value: Option<&str>) -> PyResult<String> {
-    serialize_any(py, obj, none_value, false)
+    ser::to_toml(py, &obj, none_value, false).map_err(TomlSerializationError::new_err)
 }
 
 #[pyfunction]
 #[pyo3(signature = (obj, none_value=None))]
 fn serialize_pretty(py: Python, obj: Bound<'_, PyAny>, none_value: Option<&str>) -> PyResult<String> {
-    serialize_any(py, obj, none_value, true)
+    ser::to_toml(py, &obj, none_value, true).map_err(TomlSerializationError::new_err)
 }
 
 pub fn get_version() -> String {
