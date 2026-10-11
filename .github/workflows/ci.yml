@@ -68,9 +68,9 @@ jobs:
 
       - name: run toml-test
         run: |
-          go install github.com/toml-lang/toml-test/cmd/toml-test@v2.2.0
+          go install github.com/toml-lang/toml-test/v2/cmd/toml-test@v2.2.0
           source .venv/bin/activate
-          ~/go/bin/toml-test -toml 1.1.0 ./tests/toml_test.py
+          ~/go/bin/toml-test test -toml 1.1.0 -decoder ./tests/toml_test.py
 
       - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
