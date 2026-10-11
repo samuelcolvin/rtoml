@@ -58,7 +58,8 @@ def _strip_nan(value):
     elif isinstance(value, list):
         return [_strip_nan(v) for v in value]
     elif isinstance(value, float) and value != value:
-        return 'nan'
+        # a tuple can never come out of the parser, so this cannot collide with a real value
+        return ('nan',)
     return value
 
 
