@@ -38,7 +38,7 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
     type Value = Py<PyAny>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("any valid JSON value")
+        formatter.write_str("any valid TOML value")
     }
 
     fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>
@@ -56,6 +56,20 @@ impl<'de> Visitor<'de> for PyDeserializer<'_> {
     }
 
     fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        value.into_py_any(self.py).map_err(de::Error::custom)
+    }
+
+    fn visit_i128<E>(self, value: i128) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        value.into_py_any(self.py).map_err(de::Error::custom)
+    }
+
+    fn visit_u128<E>(self, value: u128) -> Result<Self::Value, E>
     where
         E: de::Error,
     {

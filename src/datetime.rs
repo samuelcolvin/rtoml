@@ -10,8 +10,8 @@ pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<Py<PyAny>> {
             let tz_info: Option<Bound<'_, PyTzInfo>> = match &datetime.offset {
                 Some(offset) => {
                     let tz_info = match offset {
-                        TomlOffset::Z => TzInfo::new(0, 0),
-                        TomlOffset::Custom { hours, minutes } => TzInfo::new(*hours, *minutes),
+                        TomlOffset::Z => TzInfo::new(0),
+                        TomlOffset::Custom { minutes } => TzInfo::new(*minutes),
                     };
                     Some(Bound::new(py, tz_info)?.into_any().cast_into()?)
                 }
@@ -25,14 +25,22 @@ pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<Py<PyAny>> {
                 date.day,
                 t.hour,
                 t.minute,
-                t.second,
-                t.nanosecond / 1000,
+                t.second.unwrap_or(0),
+                t.nanosecond.unwrap_or(0) / 1000,
                 tz_info.as_ref(),
             )?;
             Ok(dt.into_py_any(py)?)
         }
         (Some(date), None) => Ok(PyDate::new(py, date.year as i32, date.month, date.day)?.into_py_any(py)?),
-        (None, Some(t)) => Ok(PyTime::new(py, t.hour, t.minute, t.second, t.nanosecond / 1000, None)?.into_py_any(py)?),
+        (None, Some(t)) => Ok(PyTime::new(
+            py,
+            t.hour,
+            t.minute,
+            t.second.unwrap_or(0),
+            t.nanosecond.unwrap_or(0) / 1000,
+            None,
+        )?
+        .into_py_any(py)?),
         (None, None) => {
             // AFAIK this can't actually happen
             unreachable!("either time or date (or both) are required")
@@ -42,19 +50,19 @@ pub fn parse(py: Python, datetime: &TomlDatetime) -> PyResult<Py<PyAny>> {
 
 #[pyclass(module = "rtoml._rtoml", extends = PyTzInfo)]
 struct TzInfo {
-    hours: i8,
-    minutes: u8,
+    /// offset from UTC in minutes, may be negative
+    minutes: i16,
 }
 
 #[pymethods]
 impl TzInfo {
     #[new]
-    fn new(hours: i8, minutes: u8) -> Self {
-        Self { hours, minutes }
+    fn new(minutes: i16) -> Self {
+        Self { minutes }
     }
 
     fn seconds(&self) -> i32 {
-        (self.hours as i32) * 3600 + (self.minutes as i32) * 60
+        (self.minutes as i32) * 60
     }
 
     fn utcoffset<'py>(&self, dt: &Bound<'py, PyDateTime>) -> PyResult<Bound<'py, PyDelta>> {
@@ -74,10 +82,12 @@ impl TzInfo {
     }
 
     fn __str__(&self) -> String {
-        if self.hours == 0 && self.minutes == 0 {
+        if self.minutes == 0 {
             "UTC".to_string()
         } else {
-            format!("UTC{:+03}:{:02}", self.hours, self.minutes)
+            let sign = if self.minutes < 0 { '-' } else { '+' };
+            let abs = self.minutes.unsigned_abs();
+            format!("UTC{sign}{:02}:{:02}", abs / 60, abs % 60)
         }
     }
 }

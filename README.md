@@ -11,9 +11,9 @@ A TOML library for python implemented in rust.
 
 ## Why Use rtoml
 
-* Correctness: rtoml is based on the widely used and very stable [toml-rs](https://github.com/alexcrichton/toml-rs)
-library, it passes all the [standard TOML tests](https://github.com/BurntSushi/toml-test) as well as having 100%
-coverage on python code. Other TOML libraries for python I tried all failed to parse some valid TOML.
+* Correctness: rtoml is based on the widely used and very stable [toml](https://github.com/toml-rs/toml)
+rust crate, it passes all the [standard TOML tests](https://github.com/toml-lang/toml-test) for TOML 1.1 as well as
+having 100% coverage on python code. Other TOML libraries for python I tried all failed to parse some valid TOML.
 * Performance: see [github.com/pwwang/toml-bench](https://github.com/pwwang/toml-bench) -
   rtoml is the fastest Python TOML libraries at the time of writing.
 * `None`-value handling: rtoml has flexible support for `None` values, instead of simply ignoring them.

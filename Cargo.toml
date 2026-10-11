@@ -6,7 +6,7 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-toml = {version = "0.5.11", features = ["preserve_order"]}
+toml = {version = "1.1", features = ["preserve_order"]}
 serde = "1.0.228"
 pyo3 = "0.29.3"
 
