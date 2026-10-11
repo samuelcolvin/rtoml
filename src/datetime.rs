@@ -108,7 +108,9 @@ fn offset_to_toml(dt: &Bound<'_, PyDateTime>, tz_info: &Bound<'_, PyTzInfo>) -> 
         // fast path for datetimes rtoml parsed itself
         tz_info.get().minutes
     } else {
-        let delta = tz_info.call_method1(intern!(dt.py(), "utcoffset"), (dt,))?;
+        // go via the datetime rather than calling the tzinfo directly, so Python checks the offset is a
+        // timedelta strictly within +/-24 hours
+        let delta = dt.call_method0(intern!(dt.py(), "utcoffset"))?;
         if delta.is_none() {
             return Ok(None);
         }
@@ -119,7 +121,7 @@ fn offset_to_toml(dt: &Bound<'_, PyDateTime>, tz_info: &Bound<'_, PyTzInfo>) -> 
                 "TOML offsets must be a whole number of minutes, got {delta}"
             )));
         }
-        // utcoffset() is already constrained to less than 24 hours either way, so this can't overflow
+        // |seconds| < 86_400 after Python's check, so this fits comfortably
         (seconds / 60) as i16
     };
     Ok(Some(if minutes == 0 {

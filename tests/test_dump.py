@@ -266,3 +266,14 @@ def test_dumps_sub_minute_offset():
         rtoml.TomlSerializationError, match='TOML offsets must be a whole number of minutes, got 0:00:30'
     ):
         rtoml.dumps({'a': dt})
+
+
+class BadOffset(tzinfo):
+    def utcoffset(self, dt):
+        return timedelta(hours=24)
+
+
+def test_dumps_out_of_range_offset():
+    """Python itself rejects offsets of 24 hours or more, make sure that check isn't bypassed."""
+    with pytest.raises(rtoml.TomlSerializationError, match='ValueError: offset must be a timedelta strictly between'):
+        rtoml.dumps({'a': datetime(2020, 1, 1, tzinfo=BadOffset())})
