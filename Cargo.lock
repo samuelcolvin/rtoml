@@ -130,6 +130,7 @@ dependencies = [
  "pyo3",
  "serde",
  "toml",
+ "toml_writer",
 ]
 
 [[package]]

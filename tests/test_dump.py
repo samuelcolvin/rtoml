@@ -277,3 +277,187 @@ def test_dumps_out_of_range_offset():
     """Python itself rejects offsets of 24 hours or more, make sure that check isn't bypassed."""
     with pytest.raises(rtoml.TomlSerializationError, match='ValueError: offset must be a timedelta strictly between'):
         rtoml.dumps({'a': datetime(2020, 1, 1, tzinfo=BadOffset())})
+
+
+@pytest.mark.parametrize(
+    'input_obj,none_value,pretty,output_toml',
+    [
+        (
+            {'a': 1, 't': {'b': 2, 'u': {'c': 3, 'v': {'d': 4, 'w': {'e': 5}}}}, 'z': 26},
+            None,
+            False,
+            'a = 1\nz = 26\n\n[t]\nb = 2\n\n[t.u]\nc = 3\n\n[t.u.v]\nd = 4\n\n[t.u.v.w]\ne = 5\n',
+        ),
+        (
+            {'a': 1, 't': {'b': 2, 'u': {'c': 3, 'v': {'d': 4, 'w': {'e': 5}}}}, 'z': 26},
+            None,
+            True,
+            'a = 1\nz = 26\n\n[t]\nb = 2\n\n[t.u]\nc = 3\n\n[t.u.v]\nd = 4\n\n[t.u.v.w]\ne = 5\n',
+        ),
+        ({'a': {'b': {'c': {'d': 1}}}}, None, False, '[a.b.c]\nd = 1\n'),
+        ({'a': {'b': {'c': {'d': 1}}}}, None, True, '[a.b.c]\nd = 1\n'),
+        (
+            {'a': {'b': {'c': 1}, 'd': {'e': 2}}, 'f': {'g': {}}, 'h': {}},
+            None,
+            False,
+            '[a.b]\nc = 1\n\n[a.d]\ne = 2\n\n[f.g]\n\n[h]\n',
+        ),
+        (
+            {'a': {'b': {'c': 1}, 'd': {'e': 2}}, 'f': {'g': {}}, 'h': {}},
+            None,
+            True,
+            '[a.b]\nc = 1\n\n[a.d]\ne = 2\n\n[f.g]\n\n[h]\n',
+        ),
+        ({'a': {}, 'b': {'c': {}}, 'd': {'e': {}, 'f': 1}}, None, False, '[a]\n\n[b.c]\n\n[d]\nf = 1\n\n[d.e]\n'),
+        ({'a': {}, 'b': {'c': {}}, 'd': {'e': {}, 'f': 1}}, None, True, '[a]\n\n[b.c]\n\n[d]\nf = 1\n\n[d.e]\n'),
+        ({'a': {'b': [{'x': 1}, {'x': 2}]}}, None, False, '[[a.b]]\nx = 1\n\n[[a.b]]\nx = 2\n'),
+        ({'a': {'b': [{'x': 1}, {'x': 2}]}}, None, True, '[[a.b]]\nx = 1\n\n[[a.b]]\nx = 2\n'),
+        (
+            {'t': {'x': 1}, 'v': 1, 'u': {'y': 2}, 'w': 2, 'arr': [1], 'aot': [{'z': 1}]},
+            None,
+            False,
+            'v = 1\nw = 2\narr = [1]\n\n[[aot]]\nz = 1\n\n[t]\nx = 1\n\n[u]\ny = 2\n',
+        ),
+        (
+            {'t': {'x': 1}, 'v': 1, 'u': {'y': 2}, 'w': 2, 'arr': [1], 'aot': [{'z': 1}]},
+            None,
+            True,
+            'v = 1\nw = 2\narr = [1]\n\n[[aot]]\nz = 1\n\n[t]\nx = 1\n\n[u]\ny = 2\n',
+        ),
+        (
+            {'a': [{'x': 1}, {'x': 2, 'y': {'z': 3}}, {}], 'b': 1},
+            None,
+            False,
+            'b = 1\n\n[[a]]\nx = 1\n\n[[a]]\nx = 2\n\n[a.y]\nz = 3\n\n[[a]]\n',
+        ),
+        (
+            {'a': [{'x': 1}, {'x': 2, 'y': {'z': 3}}, {}], 'b': 1},
+            None,
+            True,
+            'b = 1\n\n[[a]]\nx = 1\n\n[[a]]\nx = 2\n\n[a.y]\nz = 3\n\n[[a]]\n',
+        ),
+        ({'a': [{'b': [{'c': [{'d': 1}]}]}]}, None, False, '[[a]]\n\n[[a.b]]\n\n[[a.b.c]]\nd = 1\n'),
+        ({'a': [{'b': [{'c': [{'d': 1}]}]}]}, None, True, '[[a]]\n\n[[a.b]]\n\n[[a.b.c]]\nd = 1\n'),
+        ({'a': [{}, {}]}, None, False, '[[a]]\n\n[[a]]\n'),
+        ({'a': [{}, {}]}, None, True, '[[a]]\n\n[[a]]\n'),
+        ({'a': [{'x': [1, 2], 'y': [{'z': 1}]}]}, None, False, '[[a]]\nx = [1, 2]\n\n[[a.y]]\nz = 1\n'),
+        ({'a': [{'x': [1, 2], 'y': [{'z': 1}]}]}, None, True, '[[a]]\nx = [\n    1,\n    2,\n]\n\n[[a.y]]\nz = 1\n'),
+        (
+            {'a': [{'x': 1}, 2], 'b': [[{'x': 1}]], 'c': [{'x': {'y': {'z': [1, {'w': 2}]}}}, 'str'], 'd': [{}, 1]},
+            None,
+            False,
+            'a = [{ x = 1 }, 2]\nb = [[{ x = 1 }]]\nc = [{ x = { y = { z = [1, { w = 2 }] } } }, "str"]\nd = [{}, 1]\n',
+        ),
+        (
+            {'a': [{'x': 1}, 2], 'b': [[{'x': 1}]], 'c': [{'x': {'y': {'z': [1, {'w': 2}]}}}, 'str'], 'd': [{}, 1]},
+            None,
+            True,
+            'a = [\n    { x = 1 },\n    2,\n]\nb = [[{ x = 1 }]]\nc = [\n    { x = { y = { z = [\n    1,\n    { w = 2 },\n] } } },\n    "str",\n]\nd = [\n    {},\n    1,\n]\n',
+        ),
+        (
+            {'a': [[{'x': 1, 'y': {'z': 2}}]], 'b': [{'e': {}}, 'x'], 'c': [{'k': [1, [2, {'m': 3}]]}, None]},
+            None,
+            False,
+            'a = [[{ x = 1, y = { z = 2 } }]]\nb = [{ e = {} }, "x"]\n\n[[c]]\nk = [1, [2, { m = 3 }]]\n',
+        ),
+        (
+            {'a': [[{'x': 1, 'y': {'z': 2}}]], 'b': [{'e': {}}, 'x'], 'c': [{'k': [1, [2, {'m': 3}]]}, None]},
+            None,
+            True,
+            'a = [[{ x = 1, y = { z = 2 } }]]\nb = [\n    { e = {} },\n    "x",\n]\n\n[[c]]\nk = [\n    1,\n    [\n    2,\n    { m = 3 },\n],\n]\n',
+        ),
+        (
+            {'a': [[{'x': 1, 'y': {'z': 2}}]], 'b': [{'e': {}}, 'x'], 'c': [{'k': [1, [2, {'m': 3}]]}, None]},
+            'null',
+            False,
+            'a = [[{ x = 1, y = { z = 2 } }]]\nb = [{ e = {} }, "x"]\nc = [{ k = [1, [2, { m = 3 }]] }, "null"]\n',
+        ),
+        (
+            {'a': [[{'x': 1, 'y': {'z': 2}}]], 'b': [{'e': {}}, 'x'], 'c': [{'k': [1, [2, {'m': 3}]]}, None]},
+            'null',
+            True,
+            'a = [[{ x = 1, y = { z = 2 } }]]\nb = [\n    { e = {} },\n    "x",\n]\nc = [\n    { k = [\n    1,\n    [\n    2,\n    { m = 3 },\n],\n] },\n    "null",\n]\n',
+        ),
+        (
+            {'a': [{'x': None}, {'y': 1}], 'b': [None, {'x': 1}], 'c': [{'x': 1}, None]},
+            None,
+            False,
+            '[[a]]\n\n[[a]]\ny = 1\n\n[[b]]\nx = 1\n\n[[c]]\nx = 1\n',
+        ),
+        (
+            {'a': [{'x': None}, {'y': 1}], 'b': [None, {'x': 1}], 'c': [{'x': 1}, None]},
+            None,
+            True,
+            '[[a]]\n\n[[a]]\ny = 1\n\n[[b]]\nx = 1\n\n[[c]]\nx = 1\n',
+        ),
+        (
+            {'a': [{'x': None}, {'y': 1}], 'b': [None, {'x': 1}], 'c': [{'x': 1}, None]},
+            'null',
+            False,
+            'b = ["null", { x = 1 }]\nc = [{ x = 1 }, "null"]\n\n[[a]]\nx = "null"\n\n[[a]]\ny = 1\n',
+        ),
+        (
+            {'a': [{'x': None}, {'y': 1}], 'b': [None, {'x': 1}], 'c': [{'x': 1}, None]},
+            'null',
+            True,
+            'b = [\n    "null",\n    { x = 1 },\n]\nc = [\n    { x = 1 },\n    "null",\n]\n\n[[a]]\nx = "null"\n\n[[a]]\ny = 1\n',
+        ),
+        (
+            {'z': 1, 'y': {'x': 1}, 'w': [1], 'v': 2, 'u': [{'t': 1}], 's': {'r': 2}, 'q': 3},
+            None,
+            False,
+            'z = 1\nv = 2\nq = 3\nw = [1]\n\n[[u]]\nt = 1\n\n[y]\nx = 1\n\n[s]\nr = 2\n',
+        ),
+        (
+            {'z': 1, 'y': {'x': 1}, 'w': [1], 'v': 2, 'u': [{'t': 1}], 's': {'r': 2}, 'q': 3},
+            None,
+            True,
+            'z = 1\nv = 2\nq = 3\nw = [1]\n\n[[u]]\nt = 1\n\n[y]\nx = 1\n\n[s]\nr = 2\n',
+        ),
+        ([[1, 2], {'a': 1}, 'x', None], None, False, '[[1, 2], { a = 1 }, "x"]'),
+        ([[1, 2], {'a': 1}, 'x', None], None, True, '[[1, 2], { a = 1 }, "x"]'),
+        ([[1, 2], {'a': 1}, 'x', None], 'null', False, '[[1, 2], { a = 1 }, "x", "null"]'),
+        ([[1, 2], {'a': 1}, 'x', None], 'null', True, '[[1, 2], { a = 1 }, "x", "null"]'),
+        ([{'a': 1}, {'b': 2}], None, False, '[{ a = 1 }, { b = 2 }]'),
+        ([{'a': 1}, {'b': 2}], None, True, '[{ a = 1 }, { b = 2 }]'),
+    ],
+)
+def test_dumps_structures(input_obj, none_value, pretty, output_toml):
+    """
+    Table layout cases, the expected output was recorded from the serde based serializer these replaced,
+    the direct writer must match it exactly.
+    """
+    assert rtoml.dumps(input_obj, pretty=pretty, none_value=none_value) == output_toml
+
+
+def nest(depth, kind):
+    obj = {} if kind == 'dict' else []
+    for _ in range(depth):
+        obj = {'a': obj} if kind == 'dict' else [obj]
+    return obj
+
+
+@pytest.mark.parametrize('kind', ['dict', 'list'])
+def test_dumps_nesting_limit(kind):
+    """Deep nesting raises rather than overflowing the stack, the limit counts every table and array."""
+    ok = nest(120, kind)
+    rtoml.dumps({'a': ok})
+    rtoml.dumps({'a': ok}, pretty=True)
+    rtoml.dumps({'a': [ok]}) if kind == 'dict' else rtoml.dumps({'a': [{'b': ok}]})
+    with pytest.raises(rtoml.TomlSerializationError, match='TOML nesting too deep, the limit is 128 levels'):
+        rtoml.dumps({'a': nest(200, kind)})
+    with pytest.raises(rtoml.TomlSerializationError, match='TOML nesting too deep'):
+        rtoml.dumps({'a': nest(100_000, kind)})
+
+
+def test_dumps_self_referential():
+    d = {}
+    d['self'] = d
+    with pytest.raises(rtoml.TomlSerializationError, match='does the object contain itself'):
+        rtoml.dumps(d)
+    lst = []
+    lst.append(lst)
+    with pytest.raises(rtoml.TomlSerializationError, match='does the object contain itself'):
+        rtoml.dumps({'a': lst})
+    with pytest.raises(rtoml.TomlSerializationError, match='does the object contain itself'):
+        rtoml.dumps({'a': [d, 1]})
