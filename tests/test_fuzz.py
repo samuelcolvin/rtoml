@@ -13,8 +13,10 @@ from hypothesis import strategies as st
 
 import rtoml
 
-# tomllib was added in Python 3.11
-tomllib = pytest.importorskip('tomllib')
+try:
+    import tomllib
+except ImportError:  # Python 3.10
+    tomllib = None
 
 pytestmark = pytest.mark.filterwarnings('ignore::pytest.PytestUnraisableExceptionWarning')
 
@@ -97,6 +99,7 @@ def keys_collide(value, none_value):
     return False
 
 
+@pytest.mark.skipif(tomllib is None, reason='tomllib was added in Python 3.11')
 @settings(max_examples=300, deadline=None, suppress_health_check=[HealthCheck.too_slow])
 @given(documents, none_values, st.booleans())
 def test_roundtrip(document, none_value, pretty):
