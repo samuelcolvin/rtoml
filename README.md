@@ -34,7 +34,7 @@ installed before you can install rtoml.
 
 #### load
 ```python
-def load(toml: str | Path | TextIO, *, none_value: str | None = None) -> Dict[str, Any]: ...
+def load(toml: str | Path | IO[str], *, none_value: str | None = None) -> Dict[str, Any]: ...
 ```
 
 Parse TOML via a string or file and return a python dictionary.

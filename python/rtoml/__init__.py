@@ -1,6 +1,6 @@
 from io import TextIOBase
 from pathlib import Path
-from typing import Any, TextIO
+from typing import IO, Any, TextIO
 
 from . import _rtoml
 
@@ -13,7 +13,7 @@ TomlParsingError = _rtoml.TomlParsingError
 TomlSerializationError = _rtoml.TomlSerializationError
 
 
-def load(toml: str | Path | TextIO, *, none_value: str | None = None) -> dict[str, Any]:
+def load(toml: str | Path | IO[str], *, none_value: str | None = None) -> dict[str, Any]:
     """
     Parse TOML via a string or file and return a python dict.
 
@@ -24,7 +24,7 @@ def load(toml: str | Path | TextIO, *, none_value: str | None = None) -> dict[st
     """
     if isinstance(toml, Path):
         toml = toml.read_text(encoding='UTF-8')
-    elif isinstance(toml, (TextIOBase, TextIO)):
+    elif isinstance(toml, (TextIOBase, IO)):
         toml = toml.read()
 
     return loads(toml, none_value=none_value)
